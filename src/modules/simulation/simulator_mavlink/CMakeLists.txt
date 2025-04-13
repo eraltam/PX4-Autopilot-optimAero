@@ -71,3 +71,14 @@ add_custom_target(optimAeroF16
 		${PX4_SOURCE_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/10020_optimAeroF16
 	COMMENT "launching px4 optimAeroF16 (SYS_AUTOSTART=10020)"
 )
+
+# optimAeroHex (legacy compatibility launch helper)
+add_custom_target(optimAeroHex
+	COMMAND ${CMAKE_COMMAND} -E env PX4_SYS_AUTOSTART=10021 $<TARGET_FILE:px4>
+	WORKING_DIRECTORY ${SITL_WORKING_DIR}
+	USES_TERMINAL
+	DEPENDS
+		px4
+		${PX4_SOURCE_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/10021_optimAeroHex
+	COMMENT "launching px4 optimAeroHex (SYS_AUTOSTART=10021)"
+)

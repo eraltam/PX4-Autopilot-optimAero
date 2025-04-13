@@ -1,56 +1,54 @@
 #!/bin/sh
 #
-# @name Hex
-#
+# @name Palledrone
 # @type Hexarotor
+# @class Custom
+# @autostart 10050
 #
 
-. ${R}etc/init.d/rc.fw_defaults
+. ${R}etc/init.d/rc.mc_defaults
 
-#Hexarotor
-param set-default MAV_TYPE 13
-param set-default CA_AIRFRAME	0
+#vehicle
+param set-default MAV_TYPE 13 #hex
+param set-default CA_AIRFRAME 2  #X
 
-param set-default EKF2_FUSE_BETA 1
-
-param set-default VT_B_TRANS_DUR 5
-param set-default VT_ELEV_MC_LOCK 0
-param set-default VT_TYPE 0
-param set-default VT_FW_DIFTHR_EN 1
-param set-default VT_FW_DIFTHR_S_Y 0.3
-param set-default MPC_MAN_Y_MAX 60
-param set-default MC_PITCH_P 5
-
-param set-default CBRK_AIRSPD_CHK	0
-param set-default CBRK_BUZZER	0
-param set-default CBRK_FLIGHTTERM 121212
-param set-default CBRK_IO_SAFETY 22027
-param set-default CBRK_SUPPLY_CHK 894281
-param set-default CBRK_USB_CHK 197848
-param set-default CBRK_VTOLARMING 159753
-
-param set-default CA_FAILURE_MODE 0
-
+#todo: confirm these positions match vehicle setup 
 param set-default CA_ROTOR_COUNT 6
-param set-default CA_ROTOR0_PX 1
-param set-default CA_ROTOR0_PY 0
-param set-default CA_ROTOR0_PZ 0
-param set-default CA_ROTOR0_AX 0
-param set-default CA_ROTOR0_AY 0
-param set-default CA_ROTOR0_AZ -1 	# Is this right now that the F16 is CTOL not VTOL?
-param set-default CA_ROTOR0_CT 6.5 	# Thrust coefficient (Is this needed since we're modeling the plant?)
-param set-default CA_ROTOR0_KM 0 	# Rotor moment coefficient
+param set-default CA_ROTOR0_PX 0.0
+param set-default CA_ROTOR0_PY 1.0
+param set-default CA_ROTOR0_KM -0.05 #rotor yaw moment effectiveness
+param set-default CA_ROTOR1_PX 0.0
+param set-default CA_ROTOR1_PY -1.0
+param set-default CA_ROTOR1_KM 0.05
+param set-default CA_ROTOR2_PX 0.866025
+param set-default CA_ROTOR2_PY -0.5
+param set-default CA_ROTOR2_KM -0.05
+param set-default CA_ROTOR3_PX -0.866025
+param set-default CA_ROTOR3_PY 0.5
+param set-default CA_ROTOR3_KM 0.05
+param set-default CA_ROTOR4_PX 0.866025
+param set-default CA_ROTOR4_PY 0.5
+param set-default CA_ROTOR4_KM 0.05
+param set-default CA_ROTOR5_PX -0.866025
+param set-default CA_ROTOR5_PY -0.5
+param set-default CA_ROTOR5_KM -0.05
 
-param set-default CA_ROTOR1_PX 0.5
-param set-default CA_ROTOR1_PY 0.8660
-param set-default CA_ROTOR1_PZ 0
-param set-default CA_ROTOR1_AX 0
-param set-default CA_ROTOR1_AY 0
-param set-default CA_ROTOR1_AZ -1
-param set-default CA_ROTOR1_CT 6.5
-param set-default CA_ROTOR1_KM 0
+param set-default PWM_MAIN_FUNC1 101
+param set-default PWM_MAIN_FUNC2 102
+param set-default PWM_MAIN_FUNC3 103
+param set-default PWM_MAIN_FUNC4 104
+param set-default PWM_MAIN_FUNC5 105
+param set-default PWM_MAIN_FUNC6 106
 
+#FC
+param set-default MC_ROLL_P 6.5
+param set-default MC_PITCH_P 6.5
+param set-default MC_YAW_P 2.8
 
-param set-default COM_DISARM_PRFLT 0
-
-
+param set-default MC_PITCHRATE_P 0.1
+param set-default MC_PITCHRATE_I 0.05
+param set-default MC_PITCH_P 6.0
+param set-default MC_ROLLRATE_I 0.1
+param set-default MC_ROLL_P 6.0
+param set-default MPC_XY_VEL_I_ACC 4
+param set-default MPC_XY_VEL_P_ACC 3
