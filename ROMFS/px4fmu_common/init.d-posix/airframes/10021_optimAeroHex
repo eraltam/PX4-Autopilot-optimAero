@@ -10,7 +10,7 @@
 
 #vehicle
 param set-default MAV_TYPE 13 #hex
-param set-default CA_AIRFRAME 2  #X
+param set-default CA_AIRFRAME 0  #MR
 
 #todo: confirm these positions match vehicle setup 
 param set-default CA_ROTOR_COUNT 6
@@ -41,14 +41,21 @@ param set-default PWM_MAIN_FUNC5 105
 param set-default PWM_MAIN_FUNC6 106
 
 #FC
-param set-default MC_ROLL_P 6.5
-param set-default MC_PITCH_P 6.5
-param set-default MC_YAW_P 2.8
+param set-default MC_YAW_P 3
+param set-default MC_YAWRATE_P 0.49
+param set-default MC_YAWRATE_K 3
+param set-default MC_YAWRATE_I 0.4
 
+param set-default MC_PITCH_P 5
 param set-default MC_PITCHRATE_P 0.1
 param set-default MC_PITCHRATE_I 0.05
-param set-default MC_PITCH_P 6.0
+
+param set-default MC_ROLL_P 5.5
 param set-default MC_ROLLRATE_I 0.1
-param set-default MC_ROLL_P 6.0
+param set-default MC_ROLLRATE_K 1.5
+
 param set-default MPC_XY_VEL_I_ACC 4
 param set-default MPC_XY_VEL_P_ACC 3
+
+param set-default THR_MDL_FAC 1.0
+
