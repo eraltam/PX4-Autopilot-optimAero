@@ -87,7 +87,18 @@ px4_add_romfs_files(
 	10018_gazebo-classic_iris_foggy_lidar
 	10019_gazebo-classic_omnicopter
 	10020_optimAeroF16
-    10021_optimAeroHex
+	10021_optimAeroHex
+	10022_optimAeroQuad
+	10023_optimAeroAckermann
+	10024_optimAeroOcta
+	10025_optimAeroEVTOL
+	10026_optimAeroDiffRover
+	10027_optimAeroTracked
+	10028_optimAeroLoader
+	10029_optimAeroUSV
+	10033_optimAeroUUV
+	10034_optimAeroBicycle
+	10035_optimAeroUnicycle
 	10030_gazebo-classic_px4vision
 
 	10040_sihsim_quadx

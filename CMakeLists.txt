@@ -119,11 +119,15 @@ execute_process(
 	WORKING_DIRECTORY ${PX4_SOURCE_DIR}
 	)
 
-# git describe to X.Y.Z version
-string(REPLACE "." ";" VERSION_LIST ${PX4_GIT_TAG})
+	# git describe to X.Y.Z version
+	string(REPLACE "." ";" VERSION_LIST ${PX4_GIT_TAG})
+	list(LENGTH VERSION_LIST VERSION_LIST_LENGTH)
+	if(VERSION_LIST_LENGTH LESS 3)
+		set(VERSION_LIST "0;0;0")
+	endif()
 
-# major version
-list(GET VERSION_LIST 0 PX4_VERSION_MAJOR)
+	# major version
+	list(GET VERSION_LIST 0 PX4_VERSION_MAJOR)
 string(REPLACE "v" "" PX4_VERSION_MAJOR ${PX4_VERSION_MAJOR})
 # minor version
 list(GET VERSION_LIST 1 PX4_VERSION_MINOR)

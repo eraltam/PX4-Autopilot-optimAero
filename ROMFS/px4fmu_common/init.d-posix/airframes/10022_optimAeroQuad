@@ -1,0 +1,46 @@
+#!/bin/sh
+#
+# @name optimAero Quadrotor
+# @type Quadrotor x
+# @class Custom
+# @autostart 10022
+#
+
+. ${R}etc/init.d/rc.mc_defaults
+
+param set-default MAV_TYPE 2
+param set-default CA_AIRFRAME 0
+
+param set-default CA_ROTOR_COUNT 4
+param set-default CA_ROTOR0_PX 0.707
+param set-default CA_ROTOR0_PY 0.707
+param set-default CA_ROTOR0_KM -0.05
+param set-default CA_ROTOR1_PX -0.707
+param set-default CA_ROTOR1_PY -0.707
+param set-default CA_ROTOR1_KM -0.05
+param set-default CA_ROTOR2_PX 0.707
+param set-default CA_ROTOR2_PY -0.707
+param set-default CA_ROTOR2_KM 0.05
+param set-default CA_ROTOR3_PX -0.707
+param set-default CA_ROTOR3_PY 0.707
+param set-default CA_ROTOR3_KM 0.05
+
+param set-default PWM_MAIN_FUNC1 101
+param set-default PWM_MAIN_FUNC2 102
+param set-default PWM_MAIN_FUNC3 103
+param set-default PWM_MAIN_FUNC4 104
+
+param set-default MC_YAW_P 0.05
+param set-default MC_YAWRATE_P 0.49
+param set-default MC_YAWRATE_K 1
+param set-default MC_YAWRATE_I 0.4
+param set-default MC_PITCH_P 5
+param set-default MC_PITCHRATE_P 0.1
+param set-default MC_PITCHRATE_I 0.05
+param set-default MC_ROLL_P 5.5
+param set-default MC_ROLLRATE_I 0.1
+param set-default MC_ROLLRATE_K 1.5
+param set-default MPC_XY_VEL_I_ACC 4
+param set-default MPC_XY_VEL_P_ACC 3
+param set-default THR_MDL_FAC 1.0
+param set-default MPC_THR_HOVER 0.32

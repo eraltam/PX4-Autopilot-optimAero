@@ -82,3 +82,27 @@ add_custom_target(optimAeroHex
 		${PX4_SOURCE_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/10021_optimAeroHex
 	COMMENT "launching px4 optimAeroHex (SYS_AUTOSTART=10021)"
 )
+
+function(add_optim_aero_target target_name autostart_id)
+	add_custom_target(${target_name}
+		COMMAND ${CMAKE_COMMAND} -E env PX4_SYS_AUTOSTART=${autostart_id} $<TARGET_FILE:px4>
+		WORKING_DIRECTORY ${SITL_WORKING_DIR}
+		USES_TERMINAL
+		DEPENDS
+			px4
+			${PX4_SOURCE_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/${autostart_id}_${target_name}
+		COMMENT "launching px4 ${target_name} (SYS_AUTOSTART=${autostart_id})"
+	)
+endfunction()
+
+add_optim_aero_target(optimAeroQuad 10022)
+add_optim_aero_target(optimAeroAckermann 10023)
+add_optim_aero_target(optimAeroOcta 10024)
+add_optim_aero_target(optimAeroEVTOL 10025)
+add_optim_aero_target(optimAeroDiffRover 10026)
+add_optim_aero_target(optimAeroTracked 10027)
+add_optim_aero_target(optimAeroLoader 10028)
+add_optim_aero_target(optimAeroUSV 10029)
+add_optim_aero_target(optimAeroUUV 10033)
+add_optim_aero_target(optimAeroBicycle 10034)
+add_optim_aero_target(optimAeroUnicycle 10035)

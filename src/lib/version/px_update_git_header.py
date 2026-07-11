@@ -67,6 +67,9 @@ if validate:
             print("Check the git tag (current tag: '{:}')".format(git_tag_test))
             print("")
             sys.exit(1)
+    elif re.match(r'^[0-9a-fA-F]+$', git_tag_test):
+        if verbose:
+            print("using untagged git hash as local PX4 version: "+git_tag_test)
     else:
         print("")
         print("Error: the git tag '{:}' does not match the expected format.".format(git_tag_test))

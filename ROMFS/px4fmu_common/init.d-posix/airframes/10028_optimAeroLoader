@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+# @name optimAero Wheel Loader
+# @type Rover
+# @class Rover
+# @autostart 10028
+#
+
+. ${R}etc/init.d/rc.rover_defaults
+
+param set-default MAV_TYPE 10
+param set-default CA_AIRFRAME 5
+param set-default GND_SPEED_TRIM 2
+param set-default GND_THR_CRUISE 0.25
+param set-default NAV_ACC_RAD 1
+param set-default PWM_MAIN_FUNC1 201
+param set-default PWM_MAIN_FUNC2 101
