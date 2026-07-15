@@ -1,0 +1,156 @@
+#!/bin/sh
+#
+# @name OptimAero Hex HIL (Anello Aurelia / Cube Orange Plus)
+#
+# @type Hexarotor
+# @class HIL
+#
+
+. ${R}etc/init.d/rc.mc_defaults
+
+param set SYS_HITL 1
+
+param set UAVCAN_ENABLE 0
+
+# Confirmed live on the real Cube Orange Plus bench via HILDiagnostics/force_set_params.py
+# (2026-07-06): disables battery-voltage arming check so the bench can arm without a real
+# battery attached.
+param set-default CBRK_SUPPLY_CHK 894281
+
+param set-default MAV_TYPE 13
+param set-default CA_AIRFRAME 0
+
+# ---------------------------------------------------------
+# AURELIA ROTOR GEOMETRY (from 70003_anello_aurelia_hil)
+# ---------------------------------------------------------
+
+param set-default CA_ROTOR_COUNT 6
+
+param set-default CA_ROTOR0_PX 0.0
+param set-default CA_ROTOR0_PY 0.5
+param set-default CA_ROTOR0_KM -0.05
+
+param set-default CA_ROTOR1_PX 0.0
+param set-default CA_ROTOR1_PY -0.5
+param set-default CA_ROTOR1_KM 0.05
+
+param set-default CA_ROTOR2_PX 0.43
+param set-default CA_ROTOR2_PY -0.25
+param set-default CA_ROTOR2_KM -0.05
+
+param set-default CA_ROTOR3_PX -0.43
+param set-default CA_ROTOR3_PY 0.25
+param set-default CA_ROTOR3_KM 0.05
+
+param set-default CA_ROTOR4_PX 0.43
+param set-default CA_ROTOR4_PY 0.25
+param set-default CA_ROTOR4_KM 0.05
+
+param set-default CA_ROTOR5_PX -0.43
+param set-default CA_ROTOR5_PY -0.25
+param set-default CA_ROTOR5_KM -0.05
+
+# ---------------------------------------------------------
+# ACTUATOR MAPPING -- HIL_ACT_FUNC*, not PWM_MAIN_FUNC*.
+# Confirmed by reading src/modules/mavlink/streams/HIL_ACTUATOR_CONTROLS.hpp and the
+# stock 1001_rc_quad_x.hil/1002_standard_vtol.hil airframes: real HIL firmware maps
+# actuators via HIL_ACT_FUNC1-N, checked live by preflight_check.py/force_set_params.py.
+# 70003_anello_aurelia_hil (init.d-posix, SITL-only) used PWM_MAIN_FUNC1-6, which has no
+# effect on this real-hardware HIL path.
+# ---------------------------------------------------------
+
+param set-default HIL_ACT_FUNC1 101
+param set-default HIL_ACT_FUNC2 102
+param set-default HIL_ACT_FUNC3 103
+param set-default HIL_ACT_FUNC4 104
+param set-default HIL_ACT_FUNC5 105
+param set-default HIL_ACT_FUNC6 106
+
+# ---------------------------------------------------------
+# CONTROLLERS -- from 70003_anello_aurelia_hil, itself borrowed from
+# 10021_optimAeroHex ("values that already work in OptimAero").
+# ---------------------------------------------------------
+
+param set-default MC_YAW_P 0.05
+param set-default MC_YAWRATE_P 0.49
+param set-default MC_YAWRATE_K 1.0
+param set-default MC_YAWRATE_I 0.4
+
+param set-default MC_PITCH_P 5.0
+param set-default MC_PITCHRATE_P 0.1
+param set-default MC_PITCHRATE_I 0.05
+
+param set-default MC_ROLL_P 5.5
+param set-default MC_ROLLRATE_I 0.1
+param set-default MC_ROLLRATE_K 1.5
+
+param set-default MC_AT_SYSID_AMP 0.5
+
+param set-default MPC_XY_VEL_I_ACC 4.0
+param set-default MPC_XY_VEL_P_ACC 3.0
+
+param set-default THR_MDL_FAC 1.0
+
+# Confirmed against src/modules/mc_pos_control/multicopter_position_control_params.c:
+#   PARAM_DEFINE_FLOAT(MPC_THR_HOVER, 0.5f);  -- a 0-1 fraction, not a percentage, used
+#   directly as _control.setHoverThrust(_param_mpc_thr_hover.get()).
+# 10021_optimAeroHex's "MPC_THR_HOVER 32  #percentage" is therefore a latent bug (would
+# clamp to the param's max, i.e. a maxed-out hover-thrust baseline). 0.32 is correct.
+param set-default MPC_THR_HOVER 0.32
+
+# ---------------------------------------------------------
+# SENSOR POSITIONS -- Anello Aurelia mount offsets (X3 IMU / GPS / wind sensor)
+# ---------------------------------------------------------
+
+param set-default EKF2_IMU_POS_X 0.0
+param set-default EKF2_IMU_POS_Y 0.0381
+param set-default EKF2_IMU_POS_Z 0.0
+
+param set-default EKF2_GPS_POS_X 0.0
+param set-default EKF2_GPS_POS_Y 0.127
+param set-default EKF2_GPS_POS_Z -0.1905
+
+param set-default EKF2_WIND_POS_X -0.0381
+param set-default EKF2_WIND_POS_Y -0.0508
+param set-default EKF2_WIND_POS_Z -0.4191
+
+param set-default EKF2_WIND_OFFSET 0.0
+param set-default EKF2_WIND_SCALE 0.85
+
+# ---------------------------------------------------------
+# EKF WIND / ESTIMATOR CONFIGURATION
+# ---------------------------------------------------------
+
+param set-default EKF2_WIND_CTRL 1
+param set-default EKF2_DRAG_CTRL 1
+
+param set-default EKF2_WIND_NOISE 4.0
+param set-default EKF2_WIND_DELAY 100
+param set-default EKF2_WIND_GATE 2.5
+
+param set-default EKF2_BCOEF_X 100.0
+param set-default EKF2_BCOEF_Y 100.0
+param set-default EKF2_MCOEF 0.15
+
+param set-default EKF2_FC_ENABLE 1
+param set-default EKF2_MAG_TYPE 0
+param set-default EKF2_ARSP_THR 0.0
+param set-default EKF2_FUSE_BETA 0
+
+# Confirmed live on the real board (2026-07-14): the original 245 (this file's inherited
+# default) left EKF2 stuck in CONST_POS_MODE indefinitely -- GPS horizontal position/velocity
+# never got accepted for fusion, so pos_horiz_accuracy grew unbounded instead of converging.
+# 1023 (all GPS quality checks enabled, matching the historically-working
+# session_relay_passthrough_01 configuration) fixed it: EKF2 recovers to a fully healthy state
+# (all ESTIMATOR_STATUS position/velocity flags set) within ~75s of boot.
+param set-default EKF2_GPS_CHECK 1023
+
+# ---------------------------------------------------------
+# NOT SET HERE (deliberately) -- telemetry/companion-link params referenced by
+# HILDiagnostics/preflight_check.py (SYS_USB_AUTO, MAV_1_CONFIG, SER_TEL2_BAUD) are
+# currently managed live via force_set_params.py / QGroundControl, not via this airframe
+# file, and no confirmed value for this board was found in the repo -- do not guess a
+# telemetry-link setting for a physical serial adapter that may not be wired the same way
+# on every bench. Verify against preflight_check.py's live readback before adding these
+# here.
+# ---------------------------------------------------------

@@ -1,0 +1,112 @@
+#!/bin/sh
+#
+# @name Palledrone
+# @type Hexarotor
+# @class Custom
+# @autostart 10050
+#
+
+. ${R}etc/init.d/airframes/70000_anello_drone
+. ${R}etc/init.d/rc.mc_defaults # include generic hexarotor x params
+
+# MAV_TYPE_HEXAROTOR 13
+param set MAV_TYPE 13
+param set EKF2_FC_ENABLE 1 # enable flight controller features so in_air is not set by default
+param set SENS_FT742_CFG 201
+# param set SER_GPS1_BAUD
+
+# Real-time configurations
+param set CBRK_BUZZER 782097
+param set CBRK_FLIGHTTERM 121212
+param set CBRK_IO_SAFETY 22027
+param set CBRK_SUPPLY_CHK 894281
+param set CBRK_USB_CHK 197848
+param set CBRK_VTOLARMING 0
+param set GPS_1_CONFIG 0
+param set SENS_I2C_PROBE 1
+param set CAL_MAG0_ROT 0
+param set IMU_GYRO_CAL_EN 0
+param set SENS_IMU_AUTOCAL 0
+param set SENS_MAG_AUTOROT 0
+param set MBE_ENABLE 0
+
+# MAVLink GPS denied configuration
+param set EKF2_SEL_RC_INST 2
+param set EKF2_SEL_RC_MAP 1
+# param set-default EKF2_GPS_KILL_T 0.0
+# param set-default EKF2_GPS_V_K_T 0.0
+# param set-default EKF2_GPS_P_K_T 0.0
+
+# MAVLink parameters
+param set MAV_0_CONFIG 101
+param set MAV_0_FLOW_CTRL 2
+param set MAV_0_FORWARD 1
+param set MAV_0_MODE 0
+param set MAV_0_RADIO_CTL 1
+param set MAV_0_RATE 1200
+param set MAV_1_CONFIG 102
+param set MAV_2_CONFIG 1000
+param set SER_TEL1_BAUD 57600
+
+# EKF2 sensor settings
+param set EKF2_ARSP_THR 0.0
+param set EKF2_FUSE_BETA 0
+param set EKF2_WIND_CTRL 1
+param set EKF2_DRAG_CTRL 1
+param set EKF2_MAG_TYPE 0
+
+# X3 position on Anello Aurelia (0, 1.5", 0)
+# cube position (0, -1.5", 0)
+param set-default EKF2_IMU_POS_X 0.0
+param set-default EKF2_IMU_POS_Y 0.0381
+param set-default EKF2_IMU_POS_Z 0.0
+
+# GPS position on Anello Aurelia (0, 5", -7.5")
+param set-default EKF2_GPS_POS_X 0.0
+param set-default EKF2_GPS_POS_Y 0.127
+param set-default EKF2_GPS_POS_Z -0.1905
+
+# Wind sensor position on Anello Aurelia (-1.5", -2.0", -16.5")
+param set-default EKF2_WIND_POS_X -0.0381
+param set-default EKF2_WIND_POS_Y -0.0508
+param set-default EKF2_WIND_POS_Z -0.4191
+param set-default EKF2_WIND_OFFSET 0.0
+param set-default EKF2_WIND_SCALE 0.85
+
+# Rotor configuration
+param set-default CA_ROTOR_COUNT 6
+param set-default CA_ROTOR0_PX 0
+param set-default CA_ROTOR0_PY 0.5
+param set-default CA_ROTOR0_KM -0.05
+param set-default CA_ROTOR1_PX 0
+param set-default CA_ROTOR1_PY -0.5
+param set-default CA_ROTOR2_PX 0.43
+param set-default CA_ROTOR2_PY -0.25
+param set-default CA_ROTOR2_KM -0.05
+param set-default CA_ROTOR3_PX -0.43
+param set-default CA_ROTOR3_PY 0.25
+param set-default CA_ROTOR4_PX 0.43
+param set-default CA_ROTOR4_PY 0.25
+param set-default CA_ROTOR5_PX -0.43
+param set-default CA_ROTOR5_PY -0.25
+param set-default CA_ROTOR5_KM -0.05
+
+# # EKF2 gyro parameters
+# param set EKF2_GBIAS_INIT 0.001
+# param set EKF2_GYR_B_NOISE 0.000243 # X3 spec: 0.00000243
+# param set EKF2_GYR_NOISE 0.00144 # X3 spec: 0.0000144
+# param set EKF2_GYR_B_LIM 0.01
+
+# # EKF2 accel parameters
+# param set EKF2_ABIAS_INIT 0.2
+# param set EKF2_ACC_NOISE 0.35
+# param set EKF2_ABL_LIM 0.4
+# param set EKF2_ACC_B_NOISE 0.003
+
+# FT742 wind/drag parameters
+param set EKF2_WIND_NOISE 4.0
+param set EKF2_WIND_DELAY 100
+param set EKF2_WIND_GATE 2.5
+param set EKF2_BCOEF_X 100
+param set EKF2_BCOEF_Y 100
+param set EKF2_MCOEF 0.15

@@ -1,0 +1,139 @@
+#!/bin/sh
+#
+# @name ANELLO Aurelia HIL
+# @type Hexarotor
+# @class Simulation
+# @autostart 70003
+#
+
+. ${R}etc/init.d/rc.mc_defaults
+
+# ---------------------------------------------------------
+# VEHICLE TYPE
+# ---------------------------------------------------------
+
+param set-default MAV_TYPE 13
+param set-default CA_AIRFRAME 0
+param set-default SYS_HITL 1
+
+# ---------------------------------------------------------
+# AURELIA ROTOR GEOMETRY
+# ---------------------------------------------------------
+
+param set-default CA_ROTOR_COUNT 6
+
+param set-default CA_ROTOR0_PX 0.0
+param set-default CA_ROTOR0_PY 0.5
+param set-default CA_ROTOR0_KM -0.05
+
+param set-default CA_ROTOR1_PX 0.0
+param set-default CA_ROTOR1_PY -0.5
+param set-default CA_ROTOR1_KM 0.05
+
+param set-default CA_ROTOR2_PX 0.43
+param set-default CA_ROTOR2_PY -0.25
+param set-default CA_ROTOR2_KM -0.05
+
+param set-default CA_ROTOR3_PX -0.43
+param set-default CA_ROTOR3_PY 0.25
+param set-default CA_ROTOR3_KM 0.05
+
+param set-default CA_ROTOR4_PX 0.43
+param set-default CA_ROTOR4_PY 0.25
+param set-default CA_ROTOR4_KM 0.05
+
+param set-default CA_ROTOR5_PX -0.43
+param set-default CA_ROTOR5_PY -0.25
+param set-default CA_ROTOR5_KM -0.05
+
+# ---------------------------------------------------------
+# MOTOR OUTPUT MAPPING
+# ---------------------------------------------------------
+
+param set-default PWM_MAIN_FUNC1 101
+param set-default PWM_MAIN_FUNC2 102
+param set-default PWM_MAIN_FUNC3 103
+param set-default PWM_MAIN_FUNC4 104
+param set-default PWM_MAIN_FUNC5 105
+param set-default PWM_MAIN_FUNC6 106
+
+# ---------------------------------------------------------
+# CONTROLLERS
+# Start with the values that already work in OptimAero
+# ---------------------------------------------------------
+
+param set-default MC_YAW_P 0.05
+param set-default MC_YAWRATE_P 0.49
+param set-default MC_YAWRATE_K 1.0
+param set-default MC_YAWRATE_I 0.4
+
+param set-default MC_PITCH_P 5.0
+param set-default MC_PITCHRATE_P 0.1
+param set-default MC_PITCHRATE_I 0.05
+
+param set-default MC_ROLL_P 5.5
+param set-default MC_ROLLRATE_I 0.1
+param set-default MC_ROLLRATE_K 1.5
+
+param set-default MPC_XY_VEL_I_ACC 4.0
+param set-default MPC_XY_VEL_P_ACC 3.0
+
+param set-default THR_MDL_FAC 1.0
+
+# Verify the valid range in your PX4 branch.
+# Normally hover thrust would look like 0.32, not 32.
+param set-default MPC_THR_HOVER 0.32
+
+# ---------------------------------------------------------
+# SENSOR POSITIONS
+# ---------------------------------------------------------
+
+param set-default EKF2_IMU_POS_X 0.0
+param set-default EKF2_IMU_POS_Y 0.0381
+param set-default EKF2_IMU_POS_Z 0.0
+
+param set-default EKF2_GPS_POS_X 0.0
+param set-default EKF2_GPS_POS_Y 0.127
+param set-default EKF2_GPS_POS_Z -0.1905
+
+param set-default EKF2_WIND_POS_X -0.0381
+param set-default EKF2_WIND_POS_Y -0.0508
+param set-default EKF2_WIND_POS_Z -0.4191
+
+param set-default EKF2_WIND_OFFSET 0.0
+param set-default EKF2_WIND_SCALE 0.85
+
+# ---------------------------------------------------------
+# EKF WIND CONFIGURATION
+# ---------------------------------------------------------
+
+param set-default EKF2_WIND_CTRL 1
+param set-default EKF2_DRAG_CTRL 1
+
+param set-default EKF2_WIND_NOISE 4.0
+param set-default EKF2_WIND_DELAY 100
+param set-default EKF2_WIND_GATE 2.5
+
+param set-default EKF2_BCOEF_X 100.0
+param set-default EKF2_BCOEF_Y 100.0
+param set-default EKF2_MCOEF 0.15
+
+# ---------------------------------------------------------
+# ESTIMATOR
+# ---------------------------------------------------------
+
+param set-default EKF2_FC_ENABLE 1
+param set-default EKF2_MAG_TYPE 0
+param set-default EKF2_ARSP_THR 0.0
+param set-default EKF2_FUSE_BETA 0
+
+# ---------------------------------------------------------
+# MAVLINK
+# Adjust the port numbers to the connection used by Simulink
+# ---------------------------------------------------------
+
+# param set-default MAV_0_CONFIG 101
+# param set-default MAV_0_MODE 0
+# param set-default MAV_0_FORWARD 1
+# param set-default MAV_0_RATE 1200
+# param set-default SER_TEL1_BAUD 57600

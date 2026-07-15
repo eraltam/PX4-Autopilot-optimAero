@@ -1,0 +1,70 @@
+#!/bin/sh
+#
+# @name Palledrone
+# @type Hexarotor
+# @class Custom
+# @autostart 10050
+#
+
+. ${R}etc/init.d/rc.mc_defaults
+
+#vehicle
+param set-default MAV_TYPE 13 #hex
+param set-default CA_AIRFRAME 0  #MR
+
+#todo: confirm these positions match vehicle setup
+param set-default CA_ROTOR_COUNT 6
+param set-default CA_ROTOR0_PX 0.0
+param set-default CA_ROTOR0_PY 1.0
+param set-default CA_ROTOR0_KM -0.05 #rotor yaw moment effectiveness
+param set-default CA_ROTOR1_PX 0.0
+param set-default CA_ROTOR1_PY -1.0
+param set-default CA_ROTOR1_KM 0.05
+param set-default CA_ROTOR2_PX 0.866025
+param set-default CA_ROTOR2_PY -0.5
+param set-default CA_ROTOR2_KM -0.05
+param set-default CA_ROTOR3_PX -0.866025
+param set-default CA_ROTOR3_PY 0.5
+param set-default CA_ROTOR3_KM 0.05
+param set-default CA_ROTOR4_PX 0.866025
+param set-default CA_ROTOR4_PY 0.5
+param set-default CA_ROTOR4_KM 0.05
+param set-default CA_ROTOR5_PX -0.866025
+param set-default CA_ROTOR5_PY -0.5
+param set-default CA_ROTOR5_KM -0.05
+
+param set-default PWM_MAIN_FUNC1 101
+param set-default PWM_MAIN_FUNC2 102
+param set-default PWM_MAIN_FUNC3 103
+param set-default PWM_MAIN_FUNC4 104
+param set-default PWM_MAIN_FUNC5 105
+param set-default PWM_MAIN_FUNC6 106
+
+#FC
+param set-default MC_YAW_P 0.05
+param set-default MC_YAWRATE_P 0.49
+param set-default MC_YAWRATE_K 1
+param set-default MC_YAWRATE_I 0.4
+
+param set-default MC_PITCH_P 5
+param set-default MC_PITCHRATE_P 0.1
+param set-default MC_PITCHRATE_I 0.05
+
+param set-default MC_ROLL_P 5.5
+param set-default MC_ROLLRATE_I 0.1
+param set-default MC_ROLLRATE_K 1.5
+
+param set-default MPC_XY_VEL_I_ACC 4
+param set-default MPC_XY_VEL_P_ACC 3
+
+param set-default THR_MDL_FAC 1.0
+
+
+param set-default MC_AT_SYSID_AMP 0.5
+param set-default MPC_THR_HOVER 32 #percentage
+
+# SYS_HITL vs. SITL comparison test (HITL_PREARM_HEALTH_INVESTIGATION.md section 11 /
+# SITL_VS_HITL_ESTIMATOR_COMPARISON.md section 5): isolates whether the ~13s EKF2 reset cycle seen
+# against the real Cube Orange Plus is caused by a SYS_HITL=1-gated firmware branch (would still
+# reproduce here, in SITL, with no real hardware) vs. something physical to the real serial link.
+param set-default SYS_HITL 1

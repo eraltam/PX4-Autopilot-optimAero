@@ -52,6 +52,15 @@ if(CONFIG_MODULES_SIMULATION_PWM_OUT_SIM)
 	)
 endif()
 
+px4_add_romfs_files(
+	# Custom HIL airframe for the Anello Aurelia hexarotor on Cube Orange Plus.
+	# Registered unconditionally (not under CONFIG_MODULES_SIMULATION_PWM_OUT_SIM like the
+	# stock 1001/1002 .hil files above) -- verify during the real firmware build whether
+	# cubepilot_cubeorangeplus_default's board defconfig needs that Kconfig option enabled
+	# for this file to actually be usable; not confirmed in this checkout.
+	1003_optim_aero_hex.hil
+)
+
 if(CONFIG_MODULES_MC_RATE_CONTROL)
 	px4_add_romfs_files(
 		# [4000, 4999] Quadrotor x
