@@ -3,7 +3,7 @@
 # @name Palledrone
 # @type Hexarotor
 # @class Custom
-# @autostart 10050
+# @autostart 10021
 #
 
 . ${R}etc/init.d/rc.mc_defaults

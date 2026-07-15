@@ -3,6 +3,7 @@
 # @name F16
 #
 # @type Fixed wing
+# @autostart 10020
 #
 
 . ${R}etc/init.d/rc.fw_defaults

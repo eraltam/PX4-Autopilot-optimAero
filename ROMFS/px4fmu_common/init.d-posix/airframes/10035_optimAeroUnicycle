@@ -3,7 +3,7 @@
 # @name optimAero Unicycle Rover
 # @type Rover
 # @class Rover
-# @autostart 10032
+# @autostart 10035
 #
 
 . ${R}etc/init.d/rc.rover_defaults

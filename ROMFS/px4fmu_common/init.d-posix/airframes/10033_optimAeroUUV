@@ -3,7 +3,7 @@
 # @name optimAero UUV Subsea
 # @type Submarine
 # @class Rover
-# @autostart 10030
+# @autostart 10033
 #
 
 . ${R}etc/init.d/rc.rover_defaults
