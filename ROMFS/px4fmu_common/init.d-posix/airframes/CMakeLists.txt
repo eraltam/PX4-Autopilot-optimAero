@@ -99,6 +99,7 @@ px4_add_romfs_files(
 	10033_optimAeroUUV
 	10034_optimAeroBicycle
 	10035_optimAeroUnicycle
+	10036_optimAeroFixedwingPlane
 	10030_gazebo-classic_px4vision
 
 	10040_sihsim_quadx

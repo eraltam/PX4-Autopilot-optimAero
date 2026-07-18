@@ -1,0 +1,123 @@
+#!/bin/sh
+#
+# @name Fixedwing Plane
+#
+# @type Fixed wing
+# @autostart 10036
+#
+
+. ${R}etc/init.d/rc.fw_defaults
+
+#FW
+param set-default MAV_TYPE 1
+param set-default CA_AIRFRAME	1
+
+param set-default EKF2_FUSE_BETA 1
+
+param set-default CBRK_AIRSPD_CHK	0
+param set-default CBRK_BUZZER	0
+param set-default CBRK_FLIGHTTERM 121212
+param set-default CBRK_IO_SAFETY 22027
+param set-default CBRK_SUPPLY_CHK 894281
+param set-default CBRK_USB_CHK 197848
+param set-default CBRK_VTOLARMING 159753
+
+param set-default CA_FAILURE_MODE 0
+
+# Single tractor propeller on the nose -- same control-allocation shape as
+# F16's own single-engine entry (10020_optimAeroF16), see
+# vehicle/fixedwing_plane/components/enginePropFixedwing.slx for the plant-side model.
+param set-default CA_ROTOR_COUNT 1
+param set-default CA_ROTOR0_PX 1
+param set-default CA_ROTOR0_PY 0
+param set-default CA_ROTOR0_PZ 0
+param set-default CA_ROTOR0_AX 0
+param set-default CA_ROTOR0_AY 0
+param set-default CA_ROTOR0_AZ -1
+param set-default CA_ROTOR0_CT 6.5
+param set-default CA_ROTOR0_KM 0
+
+param set-default CA_SV0_SLEW	0.0
+param set-default CA_SV1_SLEW	0.0
+param set-default CA_SV2_SLEW	0.0
+param set-default CA_SV_CS0_FLAP	0.0
+param set-default CA_SV_CS0_SPOIL	0.0
+param set-default CA_SV_CS0_TRIM	0.0
+param set-default CA_SV_CS0_TRQ_P	0
+param set-default CA_SV_CS0_TRQ_R	-0.5
+param set-default CA_SV_CS0_TRQ_Y	0.0
+param set-default CA_SV_CS0_TYPE	1	#Aileron
+param set-default CA_SV_CS1_FLAP	0.0
+param set-default CA_SV_CS1_SPOIL	0.0
+param set-default CA_SV_CS1_TRIM	0.0
+param set-default CA_SV_CS1_TRQ_P	-1
+param set-default CA_SV_CS1_TRQ_R	0
+param set-default CA_SV_CS1_TRQ_Y	0.0
+param set-default CA_SV_CS1_TYPE	12	#Elevator
+param set-default CA_SV_CS2_FLAP	0.0
+param set-default CA_SV_CS2_SPOIL	0.0
+param set-default CA_SV_CS2_TRIM	0.0
+param set-default CA_SV_CS2_TRQ_P	0.0
+param set-default CA_SV_CS2_TRQ_R	0.0
+param set-default CA_SV_CS2_TRQ_Y	-1
+param set-default CA_SV_CS2_TYPE	4	#Rudder
+param set-default CA_SV_CS_COUNT	3
+
+param set-default COM_DISARM_PRFLT 0
+
+# Channel order matches vehicle/fixedwing_plane/components/PX4OutputMappingFixedwingPlane.slx's
+# Selector indices (2=aileron, 3=elevator, 4=rudder) -- same convention as F16's own
+# 10020_optimAeroF16 airframe, see PLAN_VEHICULOS_AEREOS_Y_MARINOS_SITL.md.
+param set-default PWM_MAIN_FUNC1 101  #ENGINE
+param set-default PWM_MAIN_FUNC2 201  #AILERONS
+param set-default PWM_MAIN_FUNC3 202  #ELEVATOR
+param set-default PWM_MAIN_FUNC4 203  #RUDDER
+
+# Low-speed light RC/GA-class airframe (Funray-derived: 2.15 kg, 2.0 m span) -- NOT F16's
+# fighter-class numbers. These are reasonable order-of-magnitude estimates for this
+# airframe class, not flight-test-tuned values -- see
+# vehicle/common/setUpVehicle.m's "fixedwing_plane" case for the underlying mass/
+# geometry these should stay consistent with.
+param set-default FW_AIRSPD_MAX  20   # m/s
+param set-default FW_AIRSPD_MIN  8    # m/s
+param set-default FW_AIRSPD_TRIM 12   # m/s
+param set-default FW_PSP_OFF 	 0    # deg
+param set-default FW_THR_TRIM 	 0.5
+param set-default FW_THR_ASPD_MAX 1   # nd
+param set-default FW_THR_ASPD_MIN 0.3 # nd
+param set-default FW_MAN_P_MAX 30     # deg
+param set-default FW_T_SINK_R_SP 1    # m/s
+param set-default FW_T_CLMB_R_SP 1    # m/s
+
+# Roll Gains
+param set-default FW_R_TC 0.2
+param set-default FW_RR_P 0.05
+param set-default FW_RR_I  0
+param set-default FW_RR_FF 0.3
+param set-default FW_R_RMAX 90
+param set-default FW_R_LIM 55
+
+# Pitch Gains
+param set-default FW_P_RMAX_POS 60
+param set-default FW_P_LIM_MAX 45
+param set-default FW_P_LIM_MIN -45
+
+# Yaw gains
+param set-default FW_YR_P 0.05
+
+# Airspeed params
+param set-default ASPD_FS_T_STOP 10
+param set-default ASPD_FALLBACK_GW  1
+param set-default ASPD_FS_INNOV  9.98
+
+# GYRO STUFF
+param set-default EKF2_GYR_B_NOISE 0.001
+
+# EKF
+param set-default EKF2_GPS_CHECK 21
+param set-default EKF2_GPS_CTRL 3
+param set-default EKF2_MAG_ACCLIM 0.00
+param set-default EKF2_MAG_E_NOISE 0.00
+param set-default EKF2_MAG_NOISE 0.001
+param set-default EKF2_MAG_CHECK 0
+param set-default EKF2_IMU_CTRL 1
