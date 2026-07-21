@@ -1,0 +1,123 @@
+#!/bin/sh
+#
+# @name Cessna 172P (JSBSim)
+#
+# @type Fixed wing
+# @autostart 10042
+#
+
+. ${R}etc/init.d/rc.fw_defaults
+
+#FW
+param set-default MAV_TYPE 1
+param set-default CA_AIRFRAME	1
+
+param set-default EKF2_FUSE_BETA 1
+
+param set-default CBRK_AIRSPD_CHK	0
+param set-default CBRK_BUZZER	0
+param set-default CBRK_FLIGHTTERM 121212
+param set-default CBRK_IO_SAFETY 22027
+param set-default CBRK_SUPPLY_CHK 894281
+param set-default CBRK_USB_CHK 197848
+param set-default CBRK_VTOLARMING 159753
+
+param set-default CA_FAILURE_MODE 0
+
+# Single tractor propeller on the nose (real Lycoming IO-320 + fixed-pitch 75in prop) -- same
+# control-allocation shape as F16's/fixedwing_plane's own single-engine entries, see
+# vehicle/c172p/components/enginePistonPropC172p.slx for the plant-side model.
+param set-default CA_ROTOR_COUNT 1
+param set-default CA_ROTOR0_PX 1
+param set-default CA_ROTOR0_PY 0
+param set-default CA_ROTOR0_PZ 0
+param set-default CA_ROTOR0_AX 0
+param set-default CA_ROTOR0_AY 0
+param set-default CA_ROTOR0_AZ -1
+param set-default CA_ROTOR0_CT 6.5
+param set-default CA_ROTOR0_KM 0
+
+param set-default CA_SV0_SLEW	0.0
+param set-default CA_SV1_SLEW	0.0
+param set-default CA_SV2_SLEW	0.0
+param set-default CA_SV_CS0_FLAP	0.0
+param set-default CA_SV_CS0_SPOIL	0.0
+param set-default CA_SV_CS0_TRIM	0.0
+param set-default CA_SV_CS0_TRQ_P	0
+param set-default CA_SV_CS0_TRQ_R	-0.5
+param set-default CA_SV_CS0_TRQ_Y	0.0
+param set-default CA_SV_CS0_TYPE	1	#Aileron
+param set-default CA_SV_CS1_FLAP	0.0
+param set-default CA_SV_CS1_SPOIL	0.0
+param set-default CA_SV_CS1_TRIM	0.0
+param set-default CA_SV_CS1_TRQ_P	-1
+param set-default CA_SV_CS1_TRQ_R	0
+param set-default CA_SV_CS1_TRQ_Y	0.0
+param set-default CA_SV_CS1_TYPE	12	#Elevator
+param set-default CA_SV_CS2_FLAP	0.0
+param set-default CA_SV_CS2_SPOIL	0.0
+param set-default CA_SV_CS2_TRIM	0.0
+param set-default CA_SV_CS2_TRQ_P	0.0
+param set-default CA_SV_CS2_TRQ_R	0.0
+param set-default CA_SV_CS2_TRQ_Y	-1
+param set-default CA_SV_CS2_TYPE	4	#Rudder
+param set-default CA_SV_CS_COUNT	3
+
+param set-default COM_DISARM_PRFLT 0
+
+# Channel order matches vehicle/c172p/components/PX4OutputMappingC172p.slx's Selector indices
+# (2=aileron, 3=elevator, 4=rudder) -- same convention as F16's/fixedwing_plane's own airframes,
+# see PLAN_INCORPORACION_AERONAVES_JSBSIM_SITL.md.
+param set-default PWM_MAIN_FUNC1 101  #ENGINE
+param set-default PWM_MAIN_FUNC2 201  #AILERONS
+param set-default PWM_MAIN_FUNC3 202  #ELEVATOR
+param set-default PWM_MAIN_FUNC4 203  #RUDDER
+
+# Real Cessna 172P performance figures (jsbsim/aircraft/c172p/c172p.xml), NOT F16's fighter-class
+# or fixedwing_plane's Funray-derived RC-class numbers -- see vehicle/common/setUpVehicle.m's
+# "c172p" case for the underlying mass/geometry these should stay consistent with. Airspeed
+# figures below are order-of-magnitude GA-class estimates (real C172P Vs0~33kt/17m/s clean stall
+# ~44kt/22.6m/s, cruise ~110kt/56m/s), not flight-test-tuned autopilot gains.
+param set-default FW_AIRSPD_MAX  60   # m/s (~117 kt)
+param set-default FW_AIRSPD_MIN  18   # m/s (~35 kt, above clean stall)
+param set-default FW_AIRSPD_TRIM 28   # m/s (~54 kt)
+param set-default FW_PSP_OFF 	 0    # deg
+param set-default FW_THR_TRIM 	 0.65
+param set-default FW_THR_ASPD_MAX 1   # nd
+param set-default FW_THR_ASPD_MIN 0.3 # nd
+param set-default FW_MAN_P_MAX 30     # deg
+param set-default FW_T_SINK_R_SP 1    # m/s
+param set-default FW_T_CLMB_R_SP 2    # m/s
+
+# Roll Gains
+param set-default FW_R_TC 0.3
+param set-default FW_RR_P 0.05
+param set-default FW_RR_I  0
+param set-default FW_RR_FF 0.3
+param set-default FW_R_RMAX 60
+param set-default FW_R_LIM 45
+
+# Pitch Gains
+param set-default FW_P_RMAX_POS 45
+param set-default FW_P_LIM_MAX 30
+param set-default FW_P_LIM_MIN -30
+
+# Yaw gains
+param set-default FW_YR_P 0.05
+
+# Airspeed params
+param set-default ASPD_FS_T_STOP 10
+param set-default ASPD_FALLBACK_GW  1
+param set-default ASPD_FS_INNOV  9.98
+
+# GYRO STUFF
+param set-default EKF2_GYR_B_NOISE 0.001
+
+# EKF
+param set-default EKF2_GPS_CHECK 21
+param set-default EKF2_GPS_CTRL 3
+param set-default EKF2_MAG_ACCLIM 0.00
+param set-default EKF2_MAG_E_NOISE 0.00
+param set-default EKF2_MAG_NOISE 0.001
+param set-default EKF2_MAG_CHECK 0
+param set-default EKF2_IMU_CTRL 1

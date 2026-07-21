@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# @name optimAero VTOL Tailsitter
+# @type Tailsitter
+# @class VTOL
+# @autostart 10037
+#
+
+. ${R}etc/init.d/rc.vtol_defaults
+
+# MAV_TYPE 19 = VTOL tailsitter, duo-rotor -- matches this vehicle's 2 rotors
+# (LADAC-Examples Arkbird twin-motor tailsitter geometry). Only the hover regime is modeled at
+# this fidelity level (see vehicle/common/setUpVehicle.m's "vtol_tailsitter" case) -- same
+# documented-gap pattern as optimAeroEVTOL's own "@type VTOL Tiltrotor" declaration not matching
+# its actual (plain multirotor) plant physics.
+param set-default MAV_TYPE 19
+param set-default CA_AIRFRAME 0
+param set-default CA_ROTOR_COUNT 2
+
+param set-default PWM_MAIN_FUNC1 101
+param set-default PWM_MAIN_FUNC2 102
+
+param set-default MPC_THR_HOVER 0.5

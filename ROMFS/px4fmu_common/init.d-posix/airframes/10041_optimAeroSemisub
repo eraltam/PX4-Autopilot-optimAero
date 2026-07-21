@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+# @name optimAero Semisubmersible
+# @type Boat
+# @class Rover
+# @autostart 10041
+#
+
+. ${R}etc/init.d/rc.rover_defaults
+
+# Semisubmersible platform (MSS/CRAFT/SHIP/models/semisubModels/data_rig.m, mass=27,162,500 kg,
+# pontoon length 84.6 m). Real vehicle is dynamic-positioning-capable (independent surge/sway/yaw
+# via azimuth thrusters) -- NOT modeled as true holonomic 3-DOF here because PX4's rover/boat
+# control modes never generate an independent sway command, so that capability could never
+# actually be driven by this SIL's own PX4 side anyway. Uses the same steer+throttle channel
+# convention as 10038_optimAeroShipSurface. See vehicle/common/setUpActuators.m's "ship_semisub"
+# case and PLAN_VEHICULOS_AEREOS_Y_MARINOS_SITL.md.
+param set-default MAV_TYPE 11
+param set-default CA_AIRFRAME 5
+
+param set-default GND_SPEED_TRIM 1
+param set-default GND_THR_CRUISE 0.2
+param set-default NAV_ACC_RAD 3
+param set-default GND_MAX_ANG 0.52
+
+param set-default PWM_MAIN_FUNC1 201
+param set-default PWM_MAIN_FUNC2 101

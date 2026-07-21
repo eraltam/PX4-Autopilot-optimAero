@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# @name optimAero DSRV
+# @type Submarine
+# @class Rover
+# @autostart 10040
+#
+
+. ${R}etc/init.d/rc.rover_defaults
+
+# Deep Submergence Rescue Vehicle (MSS/CRAFT/AUV/models/DSRV.m, Healey 1992, NPS). Real vehicle is
+# depth/pitch-controlled via a single stern plane at near-constant forward speed (L=5.0 m,
+# U0=4.11 m/s) -- modeled here with the same twin-thruster horizontal-plane simplification as
+# uuv_subsea/uuv_npsauv anyway (see vehicle/common/setUpActuators.m's "uuv_dsrv" case for why this
+# is an explicitly larger fidelity gap for THIS vehicle than for the other UUVs). See
+# PLAN_VEHICULOS_AEREOS_Y_MARINOS_SITL.md.
+param set-default MAV_TYPE 12
+param set-default CA_AIRFRAME 5
+param set-default GND_SPEED_TRIM 2
+param set-default GND_THR_CRUISE 0.3
+param set-default NAV_ACC_RAD 1
+param set-default PWM_MAIN_FUNC1 101
+param set-default PWM_MAIN_FUNC2 102

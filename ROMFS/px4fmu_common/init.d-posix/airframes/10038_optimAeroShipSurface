@@ -1,0 +1,25 @@
+#!/bin/sh
+#
+# @name optimAero Ship Surface
+# @type Boat
+# @class Rover
+# @autostart 10038
+#
+
+. ${R}etc/init.d/rc.rover_defaults
+
+# Single rudder + single propeller (subactuated Nomoto-class ship, NOT the twin-thrust
+# differential mixer usv_surface uses -- see vehicle/common/setUpVehicle.m's "ship_surface" case
+# and PLAN_VEHICULOS_AEREOS_Y_MARINOS_SITL.md). Channel convention matches
+# 10023_optimAeroAckermann (steering servo + drive motor), since a rudder is the same
+# single-steering-surface-plus-throttle actuation class as an Ackermann rover.
+param set-default MAV_TYPE 11
+param set-default CA_AIRFRAME 5
+
+param set-default GND_SPEED_TRIM 4
+param set-default GND_THR_CRUISE 0.3
+param set-default NAV_ACC_RAD 2
+param set-default GND_MAX_ANG 0.61
+
+param set-default PWM_MAIN_FUNC1 201
+param set-default PWM_MAIN_FUNC2 101
