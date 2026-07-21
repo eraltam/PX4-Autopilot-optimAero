@@ -3,7 +3,7 @@
 # @name Cessna 172P (JSBSim)
 #
 # @type Fixed wing
-# @autostart 10042
+# @autostart 10043
 #
 
 . ${R}etc/init.d/rc.fw_defaults
