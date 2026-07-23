@@ -44,7 +44,20 @@ param set-default CA_SV_CS0_FLAP	0.0
 param set-default CA_SV_CS0_SPOIL	0.0
 param set-default CA_SV_CS0_TRIM	0.0
 param set-default CA_SV_CS0_TRQ_P	0
-param set-default CA_SV_CS0_TRQ_R	-0.5
+# Sign corrected 2026-07-23: was -0.5, inconsistent with the plant's ClDa_coeff=+0.229
+# (vehicle/c172p/data/aeroDataC172p.m) -- positive aileron deflection produces a POSITIVE roll
+# moment in the plant (confirmed both by tracing the full PX4OutputMappingC172p.slx ->
+# actuatorsC172p.slx -> servo -> C172pAeroCoefficientsModel chain for any hidden sign flip -- none
+# found -- and empirically, calling the aero coefficient function directly with a +10deg aileron
+# pulse: rollMomentCoefficient went from 0 to +0.040). With TRQ_R=-0.5, the control allocator
+# solves aileron_cmd = -2*roll_torque_setpoint, so a positive commanded roll torque produced a
+# NEGATIVE real roll moment -- positive feedback in the roll loop, negligible at low dynamic
+# pressure but dominant once airspeed builds (confirmed live: roll diverged sharply at ~35-39 m/s,
+# well above every airspeed-envelope threshold in this file, immediately after the pitch axis --
+# which has a consistent sign, CA_SV_CS1_TRQ_P=-1 vs Cmde_coeff=-1.122 -- rotated cleanly).
+# Magnitude left at 0.5, only the sign changed, per PLAN_INCORPORACION_AERONAVES_JSBSIM_SITL.md
+# section 4.3.15.
+param set-default CA_SV_CS0_TRQ_R	0.5
 param set-default CA_SV_CS0_TRQ_Y	0.0
 param set-default CA_SV_CS0_TYPE	1	#Aileron
 param set-default CA_SV_CS1_FLAP	0.0
