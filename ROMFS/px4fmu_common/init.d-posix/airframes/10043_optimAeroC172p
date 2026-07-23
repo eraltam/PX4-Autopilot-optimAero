@@ -73,14 +73,54 @@ param set-default PWM_MAIN_FUNC2 201  #AILERONS
 param set-default PWM_MAIN_FUNC3 202  #ELEVATOR
 param set-default PWM_MAIN_FUNC4 203  #RUDDER
 
+# c172p is a wheeled aircraft doing a conventional runway ground roll, not a hand/catapult launch
+# -- route takeoff through PX4's runway-takeoff state machine (RunwayTakeoff.cpp) instead of the
+# accel-spike hand-launch detector (LaunchDetector.cpp). This matters beyond just correctness of
+# the ground roll: RunwayTakeoff.cpp never touches launch_detection_status at all, which sidesteps
+# a real, confirmed-in-source failure mode where FixedwingLandDetector.cpp's forced-landed branch
+# (triggered whenever launch_detection_state < STATE_FLYING) can keep vehicle_land_detected.landed
+# stuck true indefinitely -- and mission_block.cpp's is_mission_item_reached_or_completed() will
+# not even evaluate the NAV_CMD_TAKEOFF altitude condition while landed==true, which is exactly the
+# "0/4 waypoints, stuck at seq=0 while climbing past 674m" symptom from the 2026-07-21 live SITL
+# session (see PLAN_INCORPORACION_AERONAVES_JSBSIM_SITL.md section 4.2, "bug sin resolver").
+param set-default RWTO_TKOFF 1
+param set-default FW_LAUN_DETCN_ON 0
+
+# mission_c172p.yaml's mission ends in MAV_CMD_NAV_RETURN_TO_LAUNCH, not an explicit landing item
+# (rtl_after_mission=true, land_after_mission=false -- c172p's autoland flare/approach is not yet
+# validated, see optimAeroPX4SIL/CLAUDE.md section 5). rc.fw_defaults leaves MIS_TKO_LAND_REQ=2
+# ("Require a landing"), which rejects that mission outright at upload
+# ("Mission rejected: Landing waypoint/pattern required.", confirmed live 2026-07-22). Set to 0
+# ("No requirements") so a takeoff-item + RTL mission is accepted; a prior session set this via an
+# interactive `param set` at the console, which is lost on every restart -- move it here instead.
+param set-default MIS_TKO_LAND_REQ 0
+
+# Airspeed envelope corrected 2026-07-22: FW_AIRSPD_STALL was never actually overridden from
+# PX4's generic 7.0 m/s default, even though the comments below (and the old FW_TKO_AIRSPD/
+# RWTO_ROT_AIRSPD values) already assumed a ~22.6 m/s stall -- so FW_AIRSPD_MIN/RWTO_ROT_AIRSPD/
+# FW_TKO_AIRSPD were all previously set at or below the vehicle's real stall speed, not above it.
+# Live PX4 SITL testing confirmed this: arming into AUTO_LOITER (no takeoff item executed, see
+# mission fix below) commanded a premature climb, and the aircraft pitched up and lost control
+# right around 7 m/s indicated airspeed -- matching the stale FW_AIRSPD_STALL=7 default almost
+# exactly, while PX4's own FW_AIRSPD_MIN=18 target was never reached.
+# Modeled stall speed from the actual plant parameters (m=771 kg, S=16.17 m^2, CLmax=1.47):
+#   Vstall = sqrt(2*m*g / (rho*S*CLmax)) = sqrt(2*771*9.80665 / (1.225*16.17*1.47)) = 22.8 m/s
+# See PLAN_INCORPORACION_AERONAVES_JSBSIM_SITL.md section 4.3.11 for the full derivation and the
+# live-test evidence that motivated this correction.
+param set-default FW_AIRSPD_STALL 22.8 # m/s, physics-derived (see above); was left at the 7.0 default
+param set-default FW_TKO_AIRSPD 31     # m/s, climbout target: > rotation speed, comfortably > stall
+param set-default RWTO_ROT_AIRSPD 27.5 # m/s, rotation trigger: ~0.9*FW_TKO_AIRSPD (RunwayTakeoff's own default ratio), and > FW_AIRSPD_MIN so liftoff already clears minimum flying speed
+param set-default RWTO_MAX_THR 1.0
+param set-default RWTO_RAMP_TIME 2.0
+
 # Real Cessna 172P performance figures (jsbsim/aircraft/c172p/c172p.xml), NOT F16's fighter-class
 # or fixedwing_plane's Funray-derived RC-class numbers -- see vehicle/common/setUpVehicle.m's
 # "c172p" case for the underlying mass/geometry these should stay consistent with. Airspeed
-# figures below are order-of-magnitude GA-class estimates (real C172P Vs0~33kt/17m/s clean stall
-# ~44kt/22.6m/s, cruise ~110kt/56m/s), not flight-test-tuned autopilot gains.
+# figures below are order-of-magnitude GA-class estimates (physics-derived clean stall ~22.8 m/s,
+# see FW_AIRSPD_STALL above), not flight-test-tuned autopilot gains.
 param set-default FW_AIRSPD_MAX  60   # m/s (~117 kt)
-param set-default FW_AIRSPD_MIN  18   # m/s (~35 kt, above clean stall)
-param set-default FW_AIRSPD_TRIM 28   # m/s (~54 kt)
+param set-default FW_AIRSPD_MIN  27   # m/s (~53 kt), ~1.2x stall -- "some margin above stall" per PX4's own FW_AIRSPD_MIN param doc
+param set-default FW_AIRSPD_TRIM 32   # m/s (~62 kt); raised from 28 so it stays comfortably above the new FW_AIRSPD_MIN=27 (was only 1 m/s apart otherwise)
 param set-default FW_PSP_OFF 	 0    # deg
 param set-default FW_THR_TRIM 	 0.65
 param set-default FW_THR_ASPD_MAX 1   # nd
