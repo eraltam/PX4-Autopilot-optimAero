@@ -1,0 +1,185 @@
+#!/bin/sh
+#
+# @name Cessna 172P (JSBSim S-Function plant)
+#
+# @type Fixed wing
+# @autostart 10044
+#
+# NOTE: this airframe's plant is c172pJSBSim.slx (the real JSBSim_SFunction as the flight dynamics
+# model, see PLAN_JSBSIM_SFUNCTION_HYBRID_C172P.md), NOT the native hand-ported c172p.slx that
+# 10043_optimAeroC172p uses. Every tuning parameter below (roll sign, airspeed envelope, ground
+# takeoff config) was copied verbatim from 10043_optimAeroC172p's own live-PX4-SITL-tuned values as
+# a starting point -- they have NOT yet been independently re-validated against JSBSim's own real
+# aero/ground model, which may have different stall/control-surface-sign characteristics than the
+# hand-ported approximation these numbers were originally tuned against. Expect to re-tune after
+# this vehicle's own first live SITL loop (plan's Phase F item 4) -- do not assume these are
+# correct for c172pJSBSim without that validation.
+
+. ${R}etc/init.d/rc.fw_defaults
+
+#FW
+param set-default MAV_TYPE 1
+param set-default CA_AIRFRAME	1
+
+param set-default EKF2_FUSE_BETA 1
+
+param set-default CBRK_AIRSPD_CHK	0
+param set-default CBRK_BUZZER	0
+param set-default CBRK_FLIGHTTERM 121212
+param set-default CBRK_IO_SAFETY 22027
+param set-default CBRK_SUPPLY_CHK 894281
+param set-default CBRK_USB_CHK 197848
+param set-default CBRK_VTOLARMING 159753
+
+param set-default CA_FAILURE_MODE 0
+
+# Single tractor propeller on the nose (real Lycoming IO-320 + fixed-pitch 75in prop) -- same
+# control-allocation shape as F16's/fixedwing_plane's own single-engine entries, see
+# vehicle/c172pJSBSim/components/enginePistonPropC172p.slx (retained only for its Model Reference target; unused for actual propulsion, see the plan) for the plant-side model.
+param set-default CA_ROTOR_COUNT 1
+param set-default CA_ROTOR0_PX 1
+param set-default CA_ROTOR0_PY 0
+param set-default CA_ROTOR0_PZ 0
+param set-default CA_ROTOR0_AX 0
+param set-default CA_ROTOR0_AY 0
+param set-default CA_ROTOR0_AZ -1
+param set-default CA_ROTOR0_CT 6.5
+param set-default CA_ROTOR0_KM 0
+
+param set-default CA_SV0_SLEW	0.0
+param set-default CA_SV1_SLEW	0.0
+param set-default CA_SV2_SLEW	0.0
+param set-default CA_SV_CS0_FLAP	0.0
+param set-default CA_SV_CS0_SPOIL	0.0
+param set-default CA_SV_CS0_TRIM	0.0
+param set-default CA_SV_CS0_TRQ_P	0
+# Sign corrected 2026-07-23: was -0.5, inconsistent with the plant's ClDa_coeff=+0.229
+# (vehicle/c172p/data/aeroDataC172p.m) -- positive aileron deflection produces a POSITIVE roll
+# moment in the plant (confirmed both by tracing the full PX4OutputMappingC172p.slx ->
+# actuatorsC172p.slx -> servo -> C172pAeroCoefficientsModel chain for any hidden sign flip -- none
+# found -- and empirically, calling the aero coefficient function directly with a +10deg aileron
+# pulse: rollMomentCoefficient went from 0 to +0.040). With TRQ_R=-0.5, the control allocator
+# solves aileron_cmd = -2*roll_torque_setpoint, so a positive commanded roll torque produced a
+# NEGATIVE real roll moment -- positive feedback in the roll loop, negligible at low dynamic
+# pressure but dominant once airspeed builds (confirmed live: roll diverged sharply at ~35-39 m/s,
+# well above every airspeed-envelope threshold in this file, immediately after the pitch axis --
+# which has a consistent sign, CA_SV_CS1_TRQ_P=-1 vs Cmde_coeff=-1.122 -- rotated cleanly).
+# Magnitude left at 0.5, only the sign changed, per PLAN_INCORPORACION_AERONAVES_JSBSIM_SITL.md
+# section 4.3.15.
+param set-default CA_SV_CS0_TRQ_R	0.5
+param set-default CA_SV_CS0_TRQ_Y	0.0
+param set-default CA_SV_CS0_TYPE	1	#Aileron
+param set-default CA_SV_CS1_FLAP	0.0
+param set-default CA_SV_CS1_SPOIL	0.0
+param set-default CA_SV_CS1_TRIM	0.0
+param set-default CA_SV_CS1_TRQ_P	-1
+param set-default CA_SV_CS1_TRQ_R	0
+param set-default CA_SV_CS1_TRQ_Y	0.0
+param set-default CA_SV_CS1_TYPE	12	#Elevator
+param set-default CA_SV_CS2_FLAP	0.0
+param set-default CA_SV_CS2_SPOIL	0.0
+param set-default CA_SV_CS2_TRIM	0.0
+param set-default CA_SV_CS2_TRQ_P	0.0
+param set-default CA_SV_CS2_TRQ_R	0.0
+param set-default CA_SV_CS2_TRQ_Y	-1
+param set-default CA_SV_CS2_TYPE	4	#Rudder
+param set-default CA_SV_CS_COUNT	3
+
+param set-default COM_DISARM_PRFLT 0
+
+# Channel order matches vehicle/c172pJSBSim/components/PX4OutputMappingC172pJSBSim.slx's Selector indices
+# (2=aileron, 3=elevator, 4=rudder) -- same convention as F16's/fixedwing_plane's own airframes,
+# see PLAN_JSBSIM_SFUNCTION_HYBRID_C172P.md.
+param set-default PWM_MAIN_FUNC1 101  #ENGINE
+param set-default PWM_MAIN_FUNC2 201  #AILERONS
+param set-default PWM_MAIN_FUNC3 202  #ELEVATOR
+param set-default PWM_MAIN_FUNC4 203  #RUDDER
+
+# c172p is a wheeled aircraft doing a conventional runway ground roll, not a hand/catapult launch
+# -- route takeoff through PX4's runway-takeoff state machine (RunwayTakeoff.cpp) instead of the
+# accel-spike hand-launch detector (LaunchDetector.cpp). This matters beyond just correctness of
+# the ground roll: RunwayTakeoff.cpp never touches launch_detection_status at all, which sidesteps
+# a real, confirmed-in-source failure mode where FixedwingLandDetector.cpp's forced-landed branch
+# (triggered whenever launch_detection_state < STATE_FLYING) can keep vehicle_land_detected.landed
+# stuck true indefinitely -- and mission_block.cpp's is_mission_item_reached_or_completed() will
+# not even evaluate the NAV_CMD_TAKEOFF altitude condition while landed==true, which is exactly the
+# "0/4 waypoints, stuck at seq=0 while climbing past 674m" symptom from the 2026-07-21 live SITL
+# session (see PLAN_INCORPORACION_AERONAVES_JSBSIM_SITL.md section 4.2, "bug sin resolver").
+param set-default RWTO_TKOFF 1
+param set-default FW_LAUN_DETCN_ON 0
+
+# mission_c172p.yaml's mission ends in MAV_CMD_NAV_RETURN_TO_LAUNCH, not an explicit landing item
+# (rtl_after_mission=true, land_after_mission=false -- c172p's autoland flare/approach is not yet
+# validated, see optimAeroPX4SIL/CLAUDE.md section 5). rc.fw_defaults leaves MIS_TKO_LAND_REQ=2
+# ("Require a landing"), which rejects that mission outright at upload
+# ("Mission rejected: Landing waypoint/pattern required.", confirmed live 2026-07-22). Set to 0
+# ("No requirements") so a takeoff-item + RTL mission is accepted; a prior session set this via an
+# interactive `param set` at the console, which is lost on every restart -- move it here instead.
+param set-default MIS_TKO_LAND_REQ 0
+
+# Airspeed envelope corrected 2026-07-22: FW_AIRSPD_STALL was never actually overridden from
+# PX4's generic 7.0 m/s default, even though the comments below (and the old FW_TKO_AIRSPD/
+# RWTO_ROT_AIRSPD values) already assumed a ~22.6 m/s stall -- so FW_AIRSPD_MIN/RWTO_ROT_AIRSPD/
+# FW_TKO_AIRSPD were all previously set at or below the vehicle's real stall speed, not above it.
+# Live PX4 SITL testing confirmed this: arming into AUTO_LOITER (no takeoff item executed, see
+# mission fix below) commanded a premature climb, and the aircraft pitched up and lost control
+# right around 7 m/s indicated airspeed -- matching the stale FW_AIRSPD_STALL=7 default almost
+# exactly, while PX4's own FW_AIRSPD_MIN=18 target was never reached.
+# Modeled stall speed from the actual plant parameters (m=771 kg, S=16.17 m^2, CLmax=1.47):
+#   Vstall = sqrt(2*m*g / (rho*S*CLmax)) = sqrt(2*771*9.80665 / (1.225*16.17*1.47)) = 22.8 m/s
+# See PLAN_INCORPORACION_AERONAVES_JSBSIM_SITL.md section 4.3.11 for the full derivation and the
+# live-test evidence that motivated this correction.
+param set-default FW_AIRSPD_STALL 22.8 # m/s, physics-derived (see above); was left at the 7.0 default
+param set-default FW_TKO_AIRSPD 31     # m/s, climbout target: > rotation speed, comfortably > stall
+param set-default RWTO_ROT_AIRSPD 27.5 # m/s, rotation trigger: ~0.9*FW_TKO_AIRSPD (RunwayTakeoff's own default ratio), and > FW_AIRSPD_MIN so liftoff already clears minimum flying speed
+param set-default RWTO_MAX_THR 1.0
+param set-default RWTO_RAMP_TIME 2.0
+
+# Real Cessna 172P performance figures (jsbsim/aircraft/c172p/c172p.xml), NOT F16's fighter-class
+# or fixedwing_plane's Funray-derived RC-class numbers -- see vehicle/common/setUpVehicle.m's
+# "c172p" case for the underlying mass/geometry these should stay consistent with. Airspeed
+# figures below are order-of-magnitude GA-class estimates (physics-derived clean stall ~22.8 m/s,
+# see FW_AIRSPD_STALL above), not flight-test-tuned autopilot gains.
+param set-default FW_AIRSPD_MAX  60   # m/s (~117 kt)
+param set-default FW_AIRSPD_MIN  27   # m/s (~53 kt), ~1.2x stall -- "some margin above stall" per PX4's own FW_AIRSPD_MIN param doc
+param set-default FW_AIRSPD_TRIM 32   # m/s (~62 kt); raised from 28 so it stays comfortably above the new FW_AIRSPD_MIN=27 (was only 1 m/s apart otherwise)
+param set-default FW_PSP_OFF 	 0    # deg
+param set-default FW_THR_TRIM 	 0.65
+param set-default FW_THR_ASPD_MAX 1   # nd
+param set-default FW_THR_ASPD_MIN 0.3 # nd
+param set-default FW_MAN_P_MAX 30     # deg
+param set-default FW_T_SINK_R_SP 1    # m/s
+param set-default FW_T_CLMB_R_SP 2    # m/s
+
+# Roll Gains
+param set-default FW_R_TC 0.3
+param set-default FW_RR_P 0.05
+param set-default FW_RR_I  0
+param set-default FW_RR_FF 0.3
+param set-default FW_R_RMAX 60
+param set-default FW_R_LIM 45
+
+# Pitch Gains
+param set-default FW_P_RMAX_POS 45
+param set-default FW_P_LIM_MAX 30
+param set-default FW_P_LIM_MIN -30
+
+# Yaw gains
+param set-default FW_YR_P 0.05
+
+# Airspeed params
+param set-default ASPD_FS_T_STOP 10
+param set-default ASPD_FALLBACK_GW  1
+param set-default ASPD_FS_INNOV  9.98
+
+# GYRO STUFF
+param set-default EKF2_GYR_B_NOISE 0.001
+
+# EKF
+param set-default EKF2_GPS_CHECK 21
+param set-default EKF2_GPS_CTRL 3
+param set-default EKF2_MAG_ACCLIM 0.00
+param set-default EKF2_MAG_E_NOISE 0.00
+param set-default EKF2_MAG_NOISE 0.001
+param set-default EKF2_MAG_CHECK 0
+param set-default EKF2_IMU_CTRL 1
