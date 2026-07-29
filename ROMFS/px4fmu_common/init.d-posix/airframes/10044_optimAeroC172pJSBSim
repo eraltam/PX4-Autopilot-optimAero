@@ -193,11 +193,11 @@ param set EKF2_MAG_E_NOISE 0.001
 # ordinary Anello/model variation trip cs_mag_fault. Use PX4's 0.05 G default.
 param set EKF2_MAG_NOISE 0.05
 param set-default EKF2_MAG_CHECK 0
-# The JSBSim compass becomes inconsistent during sustained bank reversals and
-# repeatedly forces EKF position/yaw resets. This SITL airframe is force-armed
-# after mission upload, so allow GPS/IMU yaw alignment after takeoff instead of
-# depending on the synthetic compass.
-param set EKF2_MAG_TYPE 5
+# Keep magnetic heading fusion without the automatic in-flight transition to
+# 3-axis field fusion. The transition caused repeated EKF resets in wide bank
+# reversals, while completely disabling magnetometer fusion could not preserve
+# a usable yaw estimate during the forced-arm takeoff.
+param set EKF2_MAG_TYPE 1
 # Match GPS/IMU yaw turn compensation to the C172's 30-32 m/s mission speed.
 param set EKF2_GSF_TAS 30
 param set COM_VEL_FS_EVH 50
