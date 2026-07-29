@@ -1,19 +1,10 @@
 #!/bin/sh
 #
-# @name Cessna 172P (JSBSim S-Function plant)
+# @name Cessna 172P (JSBSim)
 #
 # @type Fixed wing
-# @autostart 10044
+# @autostart 10043
 #
-# NOTE: this airframe's plant is c172pJSBSim.slx (the real JSBSim_SFunction as the flight dynamics
-# model, see PLAN_JSBSIM_SFUNCTION_HYBRID_C172P.md), NOT the native hand-ported c172p.slx that
-# 10043_optimAeroC172p uses. Every tuning parameter below (roll sign, airspeed envelope, ground
-# takeoff config) was copied verbatim from 10043_optimAeroC172p's own live-PX4-SITL-tuned values as
-# a starting point -- they have NOT yet been independently re-validated against JSBSim's own real
-# aero/ground model, which may have different stall/control-surface-sign characteristics than the
-# hand-ported approximation these numbers were originally tuned against. Expect to re-tune after
-# this vehicle's own first live SITL loop (plan's Phase F item 4) -- do not assume these are
-# correct for c172pJSBSim without that validation.
 
 . ${R}etc/init.d/rc.fw_defaults
 
@@ -35,7 +26,7 @@ param set-default CA_FAILURE_MODE 0
 
 # Single tractor propeller on the nose (real Lycoming IO-320 + fixed-pitch 75in prop) -- same
 # control-allocation shape as F16's/fixedwing_plane's own single-engine entries, see
-# vehicle/c172pJSBSim/components/enginePistonPropC172p.slx (retained only for its Model Reference target; unused for actual propulsion, see the plan) for the plant-side model.
+# vehicle/c172p/components/enginePistonPropC172p.slx for the plant-side model.
 param set-default CA_ROTOR_COUNT 1
 param set-default CA_ROTOR0_PX 1
 param set-default CA_ROTOR0_PY 0
@@ -87,9 +78,9 @@ param set-default CA_SV_CS_COUNT	3
 
 param set-default COM_DISARM_PRFLT 0
 
-# Channel order matches vehicle/c172pJSBSim/components/PX4OutputMappingC172pJSBSim.slx's Selector indices
+# Channel order matches vehicle/c172p/components/PX4OutputMappingC172p.slx's Selector indices
 # (2=aileron, 3=elevator, 4=rudder) -- same convention as F16's/fixedwing_plane's own airframes,
-# see PLAN_JSBSIM_SFUNCTION_HYBRID_C172P.md.
+# see PLAN_INCORPORACION_AERONAVES_JSBSIM_SITL.md.
 param set-default PWM_MAIN_FUNC1 101  #ENGINE
 param set-default PWM_MAIN_FUNC2 201  #AILERONS
 param set-default PWM_MAIN_FUNC3 202  #ELEVATOR
@@ -145,19 +136,11 @@ param set-default FW_AIRSPD_MIN  27   # m/s (~53 kt), ~1.2x stall -- "some margi
 param set-default FW_AIRSPD_TRIM 32   # m/s (~62 kt); raised from 28 so it stays comfortably above the new FW_AIRSPD_MIN=27 (was only 1 m/s apart otherwise)
 param set-default FW_PSP_OFF 	 0    # deg
 param set-default FW_THR_TRIM 	 0.65
-param set-default FW_THR_MIN     0.6
-param set-default FW_THR_MAX     1.0
 param set-default FW_THR_ASPD_MAX 1   # nd
 param set-default FW_THR_ASPD_MIN 0.3 # nd
 param set-default FW_MAN_P_MAX 30     # deg
 param set-default FW_T_SINK_R_SP 1    # m/s
 param set-default FW_T_CLMB_R_SP 2    # m/s
-
-# Recorded session c172js_20260728_2050_magauto_a26 passed 78 m from waypoint
-# 1 (inside its 200 m horizontal gate) but remained about 30 m above the
-# requested altitude after the climb. The stock 10 m fixed-wing altitude gate
-# therefore prevented mission advancement despite a valid geographic capture.
-param set NAV_FW_ALT_RAD 75
 
 # Roll Gains
 param set-default FW_R_TC 0.3
@@ -186,19 +169,8 @@ param set-default EKF2_GYR_B_NOISE 0.001
 # EKF
 param set-default EKF2_GPS_CHECK 21
 param set-default EKF2_GPS_CTRL 3
-param set EKF2_MAG_ACCLIM 0.5
-param set EKF2_MAG_E_NOISE 0.001
-# Do not force the 3-axis magnetometer observation noise to PX4's minimum
-# 0.001 G. That is 50x tighter than PX4's standard fixed-wing model and made
-# ordinary Anello/model variation trip cs_mag_fault. Use PX4's 0.05 G default.
-param set EKF2_MAG_NOISE 0.05
+param set-default EKF2_MAG_ACCLIM 0.00
+param set-default EKF2_MAG_E_NOISE 0.00
+param set-default EKF2_MAG_NOISE 0.001
 param set-default EKF2_MAG_CHECK 0
-# The JSBSim compass becomes inconsistent during sustained bank reversals and
-# repeatedly forces EKF position/yaw resets. This SITL airframe is force-armed
-# after mission upload, so allow GPS/IMU yaw alignment after takeoff instead of
-# depending on the synthetic compass.
-param set EKF2_MAG_TYPE 5
-# Match GPS/IMU yaw turn compensation to the C172's 30-32 m/s mission speed.
-param set EKF2_GSF_TAS 30
-param set COM_VEL_FS_EVH 50
 param set-default EKF2_IMU_CTRL 1

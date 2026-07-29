@@ -35,6 +35,12 @@
 
 using namespace time_literals;
 
+#ifdef CONFIG_ARCH_BOARD_PX4_SITL
+# define MAG_FAULT_NAV_MODES NavModes::None
+#else
+# define MAG_FAULT_NAV_MODES NavModes::All
+#endif
+
 EstimatorChecks::EstimatorChecks()
 {
 	// initially set to failed
@@ -572,12 +578,16 @@ void EstimatorChecks::checkEstimatorStatusFlags(const Context &context, Report &
 			 * @description
 			 * Land and calibrate the compass.
 			 */
-			reporter.armingCheckFailure(NavModes::All, health_component_t::local_position_estimate,
+			reporter.armingCheckFailure(MAG_FAULT_NAV_MODES, health_component_t::local_position_estimate,
 						    events::ID("check_estimator_mag_fault"),
 						    events::Log::Critical, "Stopping compass use");
 
 			if (reporter.mavlink_log_pub()) {
+#ifdef CONFIG_ARCH_BOARD_PX4_SITL
+				mavlink_log_warning(reporter.mavlink_log_pub(), "SITL compass stopped - continuing GPS/IMU yaw\t");
+#else
 				mavlink_log_critical(reporter.mavlink_log_pub(), "Compass needs calibration - Land now!\t");
+#endif
 			}
 		}
 
@@ -855,4 +865,3 @@ bool EstimatorChecks::checkPosVelValidity(const hrt_abstime &now, const bool dat
 
 	return valid;
 }
-

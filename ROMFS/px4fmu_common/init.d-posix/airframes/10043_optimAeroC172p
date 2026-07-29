@@ -136,6 +136,13 @@ param set-default FW_AIRSPD_MIN  27   # m/s (~53 kt), ~1.2x stall -- "some margi
 param set-default FW_AIRSPD_TRIM 32   # m/s (~62 kt); raised from 28 so it stays comfortably above the new FW_AIRSPD_MIN=27 (was only 1 m/s apart otherwise)
 param set-default FW_PSP_OFF 	 0    # deg
 param set-default FW_THR_TRIM 	 0.65
+
+# Climb-starvation fix (2026-07-28): TECS commanded ~0.28 throttle in climbout while level
+# flight needs ~0.50 and a 1-2 m/s climb needs ~0.65 (verified standalone against the plant
+# enginePistonPropC172p + aeroDataC172p models). Floor throttle so TECS cannot starve the
+# climb-out; make the ceiling explicit. Reversible; .bak_20260728 alongside.
+param set FW_THR_MIN 0.6
+param set FW_THR_MAX 1.0
 param set-default FW_THR_ASPD_MAX 1   # nd
 param set-default FW_THR_ASPD_MIN 0.3 # nd
 param set-default FW_MAN_P_MAX 30     # deg
@@ -169,8 +176,10 @@ param set-default EKF2_GYR_B_NOISE 0.001
 # EKF
 param set-default EKF2_GPS_CHECK 21
 param set-default EKF2_GPS_CTRL 3
-param set-default EKF2_MAG_ACCLIM 0.00
-param set-default EKF2_MAG_E_NOISE 0.00
-param set-default EKF2_MAG_NOISE 0.001
+param set EKF2_MAG_ACCLIM 0.5
+param set EKF2_MAG_E_NOISE 0.001
+param set EKF2_MAG_NOISE 0.05
 param set-default EKF2_MAG_CHECK 0
+param set EKF2_MAG_TYPE 0
+param set NAV_FW_ALT_RAD 75
 param set-default EKF2_IMU_CTRL 1
