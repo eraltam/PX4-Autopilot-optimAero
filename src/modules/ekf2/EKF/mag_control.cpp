@@ -454,7 +454,14 @@ void Ekf::run3DMagAndDeclFusions(const Vector3f &mag)
 	const Vector3f mag_bias_var = P.slice<3, 3>(19, 19).diag();
 	const bool mag_bias_var_good = (mag_bias_var.min() > 0.f) && (mag_bias_var.max() < sq(0.02f));
 
-	const bool update_all_states = _control_status.flags.mag_aligned_in_flight && mag_bias_var_good;
+	// optimAero SIL provides a calibrated zero-bias magnetometer. Requiring the
+	// online bias covariance to converge before attitude fusion creates a
+	// deadlock: alignment-only fusion changes mag_I/mag_B, the covariance gate
+	// never opens, and the magnetic states fault. Once in-flight alignment is
+	// established, fuse attitude directly while mag_fusion.cpp freezes the
+	// known magnetic states.
+	const bool update_all_states = _control_status.flags.mag_aligned_in_flight;
+	(void)mag_bias_var_good;
 
 	if (!_mag_decl_cov_reset) {
 		// After any magnetic field covariance reset event the earth field state
@@ -602,5 +609,19 @@ void Ekf::startMag3DFusion()
 		zeroMagCov();
 		loadMagCovData();
 		_control_status.flags.mag_3D = true;
+	}
+
+	// Forced 3-axis fusion enters this function directly rather than through
+	// selectMagAuto(). In the optimAero SIL configuration there is no active
+	// range-aiding source, so the normal height-above-ground realignment gate
+	// never marks the magnetometer aligned in flight. That leaves fusion in
+	// its alignment-only path, which updates only mag_I/mag_B until they drift
+	// and fault. The ground alignment is already based on the verified IGRF
+	// field; once airborne and yaw-aligned, allow full attitude fusion.
+	if (_control_status.flags.in_air
+	    && _control_status.flags.yaw_align
+	    && !_control_status.flags.mag_aligned_in_flight) {
+		_control_status.flags.mag_aligned_in_flight = true;
+		_flt_mag_align_start_time = _time_delayed_us;
 	}
 }

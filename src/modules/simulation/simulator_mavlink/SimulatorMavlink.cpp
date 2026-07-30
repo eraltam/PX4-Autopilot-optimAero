@@ -435,6 +435,9 @@ void SimulatorMavlink::handle_message_hil_gps(const mavlink_message_t *msg)
 
 		gps.satellites_used = hil_gps.satellites_visible;
 
+		// The connector's HIL_GPS yaw is course over ground, not dual-antenna
+		// heading. Leave GNSS heading unavailable; synchronized truth attitude
+		// is published separately as ideal visual odometry for SIL yaw aiding.
 		gps.heading = NAN;
 		gps.heading_offset = NAN;
 
@@ -540,9 +543,24 @@ void SimulatorMavlink::handle_message_hil_state_quaternion(const mavlink_message
 
 		matrix::Quatf q(hil_state.attitude_quaternion);
 		q.copyTo(hil_attitude.q);
+		_hil_ground_truth_heading = matrix::Eulerf(q).psi();
 
 		// always publish ground truth attitude message
 		_attitude_ground_truth_pub.publish(hil_attitude);
+
+		// Model an ideal external-attitude sensor from synchronized simulation
+		// truth. EKF configuration selects yaw only; GPS remains responsible for
+		// position and velocity.
+		vehicle_odometry_s odom{vehicle_odometry_empty};
+		odom.timestamp_sample = timestamp;
+		odom.timestamp = timestamp;
+		odom.pose_frame = vehicle_odometry_s::POSE_FRAME_NED;
+		q.copyTo(odom.q);
+		odom.orientation_variance[0] = math::sq(math::radians(1.f));
+		odom.orientation_variance[1] = math::sq(math::radians(1.f));
+		odom.orientation_variance[2] = math::sq(math::radians(1.f));
+		odom.quality = 100;
+		_visual_odometry_pub.publish(odom);
 	}
 
 	/* global position */

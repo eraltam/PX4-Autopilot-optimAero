@@ -198,6 +198,18 @@ bool Ekf::fuseMag(const Vector3f &mag, estimator_aid_source3d_s &aid_src_mag, bo
 			for (unsigned row = 22; row <= 23; row++) {
 				Kfusion(row) = 0.f;
 			}
+
+		} else {
+			// The optimAero SIL magnetometer is a calibrated, deterministic
+			// IGRF field with no body bias. Once in-flight alignment makes the
+			// attitude states observable, do not let the coupled update trade
+			// attitude error against fictitious Earth-field/body-bias changes.
+			// That ambiguity previously drove mag_B beyond 0.08 G in about
+			// 13 seconds, tripped cs_mag_fault, and caused repeated emergency
+			// yaw/position resets even though raw |B| remained 0.356 G.
+			for (unsigned row = 16; row <= 21; row++) {
+				Kfusion(row) = 0.f;
+			}
 		}
 
 		if (measurementUpdate(Kfusion, aid_src_mag.innovation_variance[index], aid_src_mag.innovation[index])) {

@@ -218,6 +218,7 @@ private:
 
 	hrt_abstime _last_sim_timestamp{0};
 	hrt_abstime _last_sitl_timestamp{0};
+	float _hil_ground_truth_heading{NAN};
 
 	void run();
 

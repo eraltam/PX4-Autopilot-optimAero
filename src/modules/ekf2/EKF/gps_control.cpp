@@ -162,7 +162,15 @@ void Ekf::controlGpsFusion(const imuSample &imu_delayed)
 
 					bool do_vel_pos_reset = shouldResetGpsFusion();
 
-					if (isYawFailure()
+					const bool healthy_recent_mag_3d =
+						_control_status.flags.mag_3D
+						&& _aid_src_mag.fused
+						&& !_aid_src_mag.innovation_rejected
+						&& (Vector3f(_aid_src_mag.test_ratio).max() < 1.f)
+						&& ((_time_delayed_us - _aid_src_mag.time_last_fuse) < (uint64_t)1e6);
+
+					if (!healthy_recent_mag_3d
+					    && isYawFailure()
 					    && _control_status.flags.in_air
 					    && isTimedOut(_time_last_hor_vel_fuse, _params.EKFGSF_reset_delay)
 					    && (_time_last_hor_vel_fuse > _time_last_on_ground_us)) {
