@@ -1,0 +1,11 @@
+# shellcheck disable=SC2154
+# The default GCS mavlink instance on 18570 (px4-rc.mavlink) starts with no -t/-o, so it only
+# replies to a peer it has "learned" from an inbound packet -- fine for a same-host QGC, but this
+# harness's mission-upload relay (HILDiagnostics/mavlink_system/wsl_udp_relay.py) only forwards,
+# it never originates a first packet toward PX4, so PX4 never learns a peer and never streams
+# telemetry out. Restart the instance pointed explicitly at the Windows host (reusing
+# PX4_SIM_HOSTNAME, already set for the TCP simulator connection) so it actively streams to
+# 14550 regardless of who has or hasn't spoken first. Matches the manual `mavlink stop -u 18570 /
+# mavlink start ... -t <windows-ip>` procedure from the documented successful zigzag run.
+mavlink stop -u 18570
+mavlink start -x -u 18570 -o 14550 -t "${PX4_SIM_HOSTNAME}" -r 4000000 -f

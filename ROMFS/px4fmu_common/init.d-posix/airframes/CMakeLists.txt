@@ -107,6 +107,7 @@ px4_add_romfs_files(
 	10041_optimAeroSemisub
 	10043_optimAeroC172p
 	10044_optimAeroC172pJSBSim
+	10044_optimAeroC172pJSBSim.post
 	10030_gazebo-classic_px4vision
 
 	10040_sihsim_quadx
