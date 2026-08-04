@@ -1,0 +1,180 @@
+#!/bin/sh
+#
+# @name Lockheed C-130 Hercules (JSBSim S-Function plant)
+#
+# @type Fixed wing
+# @autostart 10045
+#
+# NOTE: this airframe's plant is c130JSBSim.slx (the real JSBSim_SFunction as the flight dynamics
+# model, aircraft/C130/C130.xml, see PLAN_JSBSIM_SFUNCTION_F22_C130.md), following the same
+# JSBSim-S-Function-hybrid architecture as 10044_optimAeroC172pJSBSim
+# (PLAN_JSBSIM_SFUNCTION_HYBRID_C172P.md). All tuning parameters below (airspeed envelope,
+# control-allocator gains, ground takeoff config) are FIRST-PASS ENGINEERING ESTIMATES, not
+# flight-validated -- unlike 10044_optimAeroC172pJSBSim (whose values were carried over, already
+# live-PX4-SITL-tuned, from 10043_optimAeroC172p), there is no smaller/lighter sibling airframe to
+# copy tuned values from here. C-130 is a ~50-tonne 4-engine transport, an order of magnitude
+# beyond any vehicle previously registered in this SIL -- expect a real tuning pass during this
+# airframe's own first live SITL loop (PLAN_JSBSIM_SFUNCTION_F22_C130.md Phase F item 4), do not
+# assume these numbers are correct without that validation.
+
+. ${R}etc/init.d/rc.fw_defaults
+
+#FW
+param set-default MAV_TYPE 1
+param set-default CA_AIRFRAME	1
+
+param set-default EKF2_FUSE_BETA 1
+
+param set-default CBRK_AIRSPD_CHK	0
+param set-default CBRK_BUZZER	0
+param set-default CBRK_FLIGHTTERM 121212
+param set-default CBRK_IO_SAFETY 22027
+param set-default CBRK_SUPPLY_CHK 894281
+param set-default CBRK_USB_CHK 197848
+param set-default CBRK_VTOLARMING 159753
+
+param set-default CA_FAILURE_MODE 0
+
+# 4 real T56 turboprop engines (jsbsim/engine/t56.xml + t56_prop.xml), but PX4 only ever commands
+# ONE throttle channel (this SIL's ActuatorInterface="servos" contract, same as c172pJSBSim) --
+# packC130JSBSimInputs.m broadcasts that single command to all 4 fcs/throttle-cmd-norm[0-3]
+# properties (see c130JSBSim_io.xml). From PX4's control-allocator point of view this is therefore
+# a single effective thrust source, same CA_ROTOR_COUNT=1 shape as c172pJSBSim's single real
+# engine -- not modeling 4 independent throttle channels in this pass.
+param set-default CA_ROTOR_COUNT 1
+param set-default CA_ROTOR0_PX 1
+param set-default CA_ROTOR0_PY 0
+param set-default CA_ROTOR0_PZ 0
+param set-default CA_ROTOR0_AX 0
+param set-default CA_ROTOR0_AY 0
+param set-default CA_ROTOR0_AZ -1
+param set-default CA_ROTOR0_CT 6.5
+param set-default CA_ROTOR0_KM 0
+
+param set-default CA_SV0_SLEW	0.0
+param set-default CA_SV1_SLEW	0.0
+param set-default CA_SV2_SLEW	0.0
+param set-default CA_SV_CS0_FLAP	0.0
+param set-default CA_SV_CS0_SPOIL	0.0
+param set-default CA_SV_CS0_TRIM	0.0
+param set-default CA_SV_CS0_TRQ_P	0
+param set-default CA_SV_CS0_TRQ_R	1.0
+param set-default CA_SV_CS0_TRQ_Y	0.0
+param set-default CA_SV_CS0_TYPE	1	#Aileron
+param set-default CA_SV_CS1_FLAP	0.0
+param set-default CA_SV_CS1_SPOIL	0.0
+param set-default CA_SV_CS1_TRIM	0.0
+param set-default CA_SV_CS1_TRQ_P	-1
+param set-default CA_SV_CS1_TRQ_R	0
+param set-default CA_SV_CS1_TRQ_Y	0.0
+param set-default CA_SV_CS1_TYPE	12	#Elevator
+param set-default CA_SV_CS2_FLAP	0.0
+param set-default CA_SV_CS2_SPOIL	0.0
+param set-default CA_SV_CS2_TRIM	0.0
+param set-default CA_SV_CS2_TRQ_P	0.0
+param set-default CA_SV_CS2_TRQ_R	0.0
+param set-default CA_SV_CS2_TRQ_Y	-1
+param set-default CA_SV_CS2_TYPE	4	#Rudder
+param set-default CA_SV_CS_COUNT	3
+
+param set-default COM_DISARM_PRFLT 0
+
+# Channel order matches vehicle/c130JSBSim/components/PX4OutputMappingC130JSBSim.slx's Selector
+# indices (2=aileron, 3=elevator, 4=rudder), same convention as 10044_optimAeroC172pJSBSim.
+param set-default PWM_MAIN_FUNC1 101  #ENGINE
+param set-default PWM_MAIN_FUNC2 201  #AILERONS
+param set-default PWM_MAIN_FUNC3 202  #ELEVATOR
+param set-default PWM_MAIN_FUNC4 203  #RUDDER
+
+# C-130 is a wheeled aircraft doing a conventional runway ground roll -- same RunwayTakeoff.cpp
+# routing as c172p/c172pJSBSim, for the same reason (see 10044_optimAeroC172pJSBSim's own comment
+# on FixedwingLandDetector.cpp's forced-landed interaction with LaunchDetector.cpp).
+param set-default RWTO_TKOFF 1
+param set-default FW_LAUN_DETCN_ON 0
+
+param set-default MIS_TKO_LAND_REQ 0
+
+# Airspeed envelope -- FIRST-PASS PHYSICS ESTIMATE, not flight-validated (see header comment).
+# Modeled stall speed from the actual plant parameters (m=49832 kg [105000 lbs empty + 5x972.2 lbs
+# fuel, see vehicle/common/setUpVehicle.m's "c130jsbsim" case], S=285.28 m^2
+# [3070.18 ft^2 * 0.09290304], CLmax=1.4 [peak of C130.xml's aero/coefficient/CLalpha 1-D table,
+# clean/no-flaps since flaps are tied off per PLAN_JSBSIM_SFUNCTION_F22_C130.md Phase A.5 -- a real
+# C-130 stall speed with flaps deployed would be considerably lower]):
+#   Vstall = sqrt(2*m*g / (rho*S*CLmax)) = sqrt(2*49832*9.80665 / (1.225*285.28*1.4)) = 44.7 m/s
+param set-default FW_AIRSPD_STALL 44.7  # m/s, physics-derived clean-configuration estimate
+param set-default FW_TKO_AIRSPD 62      # m/s, climbout target: > rotation speed, > stall margin
+param set-default RWTO_ROT_AIRSPD 56    # m/s, rotation trigger: ~0.9*FW_TKO_AIRSPD, > FW_AIRSPD_MIN
+param set-default RWTO_MAX_THR 1.0
+param set-default RWTO_RAMP_TIME 4.0    # longer than c172pJSBSim's 2.0s -- much higher inertia/mass
+
+param set-default FW_AIRSPD_MAX  90     # m/s (~175 kt), conservative first-pass estimate (real C-130
+                                         # cruise is faster, but this SIL/PX4's fixed-wing controller
+                                         # has never been exercised anywhere near this speed regime --
+                                         # see PLAN_JSBSIM_SFUNCTION_F22_C130.md §4 non-goals)
+param set-default FW_AIRSPD_MIN  54     # m/s, ~1.2x stall margin, same convention as c172pJSBSim
+param set-default FW_AIRSPD_TRIM 65     # m/s, comfortably above FW_AIRSPD_MIN
+param set-default FW_PSP_OFF 	 0    # deg
+param set-default FW_THR_TRIM 	 0.65
+param set-default FW_THR_ASPD_MAX 1   # nd
+param set-default FW_THR_ASPD_MIN 0.3 # nd
+param set-default FW_MAN_P_MAX 20     # deg, lower than c172pJSBSim's 30 -- large transport, less pitch authority expected
+param set-default FW_T_SINK_R_SP 1.5  # m/s, higher sink rate expected given mass
+param set-default FW_T_CLMB_R_SP 1.5  # m/s, lower climb rate expected given mass/thrust ratio vs c172pJSBSim
+
+# Roll Gains -- lower rates than c172pJSBSim's GA-class values, large transport with correspondingly
+# larger roll inertia (Ixx=4.97e6 kg*m^2 vs c172pJSBSim's ~1284 kg*m^2, several orders of magnitude).
+param set-default FW_R_TC 0.5
+param set-default FW_RR_P 0.03
+param set-default FW_RR_I  0
+param set-default FW_RR_FF 0.3
+param set-default FW_R_RMAX 30
+param set-default FW_R_LIM 30
+
+# Pitch Gains
+param set-default FW_P_RMAX_POS 20
+param set-default FW_P_LIM_MAX 20
+param set-default FW_P_LIM_MIN -20
+
+# Yaw gains
+param set-default FW_YR_P 0.05
+
+# Airspeed params
+param set-default ASPD_FS_T_STOP 10
+param set-default ASPD_FALLBACK_GW  1
+param set-default ASPD_FS_INNOV  9.98
+
+# GYRO STUFF
+param set-default EKF2_GYR_B_NOISE 0.001
+
+# EKF -- EKF2_GPS_CTRL=7 (full GPS pos+alt+vel fusion, PX4 default) from the start, NOT the buggy
+# =3 (velocity fusion disabled) an early version of 10044_optimAeroC172pJSBSim shipped with before
+# being corrected -- see PLAN_JSBSIM_SFUNCTION_HYBRID_C172P.md section 4.4's "EKF2_GPS_CTRL
+# deshabilitaba la fusion de velocidad GPS" finding. Do not copy the old =3 value from a stale
+# reference of that airframe file.
+param set-default EKF2_GPS_CHECK 21
+param set-default EKF2_GPS_CTRL 7
+param set-default EKF2_MAG_ACCLIM 0.00
+param set-default EKF2_MAG_E_NOISE 0.00
+param set-default EKF2_MAG_NOISE 0.001
+param set-default EKF2_MAG_CHECK 0
+param set-default EKF2_IMU_CTRL 1
+
+# EKF2_VEL_GATE/EKF2_POS_GATE widening TRIED and REVERTED (2026-08-01, c130run8): raising both to
+# 15 to stop the repeated "position/velocity invalid" failsafe cycling (section 13.7's root-cause
+# finding: clean raw GPS, EKF2 innovation rejection, vel/pos_test_ratio up to 9.9 against a stock
+# gate of ~3-5) made the outcome WORSE, not better -- c130run8 saw 26 failsafe cycles (vs 7 in
+# run7), never advanced past waypoint 3 (run7 reached RTL), and ended in a severe, unrecoverable
+# divergence (groundspeed 133 m/s vs airspeed 42 m/s, altitude -65m, 21km off-course). Widening
+# the gate lets the EKF ACCEPT innovations it would otherwise have correctly rejected -- the
+# repeated rejection cycling in run7 was very plausibly the EKF *protecting* the estimate from
+# genuinely bad fused data, not an overly-strict false positive; removing that protection let bad
+# fusion propagate into the actual state estimate instead of just flagging it. **Do not re-widen
+# these gates without new evidence pointing the other way** -- the real fix is almost certainly
+# upstream of the gate (why is the innovation large in the first place -- process noise tuning,
+# acceleration estimation, or a genuine plant-side dynamics issue during hard turns), not
+# loosening the check that was correctly catching it. See section 13.8.
+
+# Battery thresholds -- same overrides c172pJSBSim's own airframe needed to avoid spurious low-battery
+# failsafe action during SITL bench testing (see PLAN_INCORPORACION_AERONAVES_JSBSIM_SITL.md
+# section 4.4 finding 7).
+param set-default COM_LOW_BAT_ACT 0

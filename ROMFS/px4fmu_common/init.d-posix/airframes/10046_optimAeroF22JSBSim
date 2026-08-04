@@ -1,0 +1,212 @@
+#!/bin/sh
+#
+# @name General Dynamics F-22A Raptor (JSBSim S-Function plant)
+#
+# @type Fixed wing
+# @autostart 10046
+#
+# NOTE: this airframe's plant is f22JSBSim.slx (the real JSBSim_SFunction as the flight dynamics
+# model, aircraft/f22/f22.xml, see PLAN_JSBSIM_SFUNCTION_F22_C130.md), following the same
+# JSBSim-S-Function-hybrid architecture as 10044_optimAeroC172pJSBSim/10045_optimAeroC130JSBSim.
+# All tuning parameters below (airspeed envelope, control-allocator gains, ground takeoff config)
+# are FIRST-PASS ENGINEERING ESTIMATES, not flight-validated -- unlike a transport or GA aircraft,
+# F-22 is a supersonic-class fighter with thrust-vector control folded entirely into f22.xml's own
+# internal FCS (never exposed to PX4 -- see f22JSBSim_io.xml's header comment). PX4's
+# fw_att_control/fw_pos_control were never designed with a Mach 2 aircraft in mind -- this airframe
+# deliberately targets a conservative, well-subsonic first flight envelope (see FW_AIRSPD_MAX
+# below), not anything close to this aircraft's real performance envelope. Expect a real tuning
+# pass during this airframe's own first live SITL loop (PLAN_JSBSIM_SFUNCTION_F22_C130.md Phase F).
+
+. ${R}etc/init.d/rc.fw_defaults
+
+#FW
+param set-default MAV_TYPE 1
+param set-default CA_AIRFRAME	1
+
+param set-default EKF2_FUSE_BETA 1
+
+param set-default CBRK_AIRSPD_CHK	0
+param set-default CBRK_BUZZER	0
+param set-default CBRK_FLIGHTTERM 121212
+param set-default CBRK_IO_SAFETY 22027
+param set-default CBRK_SUPPLY_CHK 894281
+param set-default CBRK_USB_CHK 197848
+param set-default CBRK_VTOLARMING 159753
+
+param set-default CA_FAILURE_MODE 0
+
+# 2 real F119-PW-100 afterburning turbofans (jsbsim/engine/F119-PW-1.xml + direct.xml, a <direct>
+# thruster -- no propeller, unlike c130JSBSim), but PX4 only ever commands ONE throttle channel
+# (this SIL's ActuatorInterface="servos" contract, same as c172pJSBSim/c130JSBSim) --
+# packF22JSBSimInputs.m broadcasts that single command to both engines' fcs/throttle-cmd-norm
+# properties (bare + [1], see f22JSBSim_io.xml). From PX4's control-allocator point of view this is
+# therefore a single effective thrust source, same CA_ROTOR_COUNT=1 shape as c130JSBSim's 4-engine
+# broadcast -- not modeling independent per-engine throttle in this pass.
+param set-default CA_ROTOR_COUNT 1
+param set-default CA_ROTOR0_PX 1
+param set-default CA_ROTOR0_PY 0
+param set-default CA_ROTOR0_PZ 0
+param set-default CA_ROTOR0_AX 0
+param set-default CA_ROTOR0_AY 0
+param set-default CA_ROTOR0_AZ -1
+param set-default CA_ROTOR0_CT 6.5
+param set-default CA_ROTOR0_KM 0
+
+param set-default CA_SV0_SLEW	0.0
+param set-default CA_SV1_SLEW	0.0
+param set-default CA_SV2_SLEW	0.0
+param set-default CA_SV_CS0_FLAP	0.0
+param set-default CA_SV_CS0_SPOIL	0.0
+param set-default CA_SV_CS0_TRIM	0.0
+param set-default CA_SV_CS0_TRQ_P	0
+param set-default CA_SV_CS0_TRQ_R	1.0
+param set-default CA_SV_CS0_TRQ_Y	0.0
+param set-default CA_SV_CS0_TYPE	1	#Aileron
+param set-default CA_SV_CS1_FLAP	0.0
+param set-default CA_SV_CS1_SPOIL	0.0
+param set-default CA_SV_CS1_TRIM	0.0
+param set-default CA_SV_CS1_TRQ_P	-1
+param set-default CA_SV_CS1_TRQ_R	0
+param set-default CA_SV_CS1_TRQ_Y	0.0
+param set-default CA_SV_CS1_TYPE	12	#Elevator
+param set-default CA_SV_CS2_FLAP	0.0
+param set-default CA_SV_CS2_SPOIL	0.0
+param set-default CA_SV_CS2_TRIM	0.0
+param set-default CA_SV_CS2_TRQ_P	0.0
+param set-default CA_SV_CS2_TRQ_R	0.0
+param set-default CA_SV_CS2_TRQ_Y	-1
+param set-default CA_SV_CS2_TYPE	4	#Rudder
+param set-default CA_SV_CS_COUNT	3
+
+param set-default COM_DISARM_PRFLT 0
+
+# Channel order matches vehicle/f22JSBSim/components/PX4OutputMappingF22JSBSim.slx's Selector
+# indices (2=aileron, 3=elevator, 4=rudder), same convention as
+# 10044_optimAeroC172pJSBSim/10045_optimAeroC130JSBSim.
+param set-default PWM_MAIN_FUNC1 101  #ENGINE
+param set-default PWM_MAIN_FUNC2 201  #AILERONS
+param set-default PWM_MAIN_FUNC3 202  #ELEVATOR
+param set-default PWM_MAIN_FUNC4 203  #RUDDER
+
+# F-22 is a wheeled aircraft doing a conventional runway ground roll -- same RunwayTakeoff.cpp
+# routing as c172p/c172pJSBSim/c130JSBSim, for the same reason (see 10044_optimAeroC172pJSBSim's
+# own comment on FixedwingLandDetector.cpp's forced-landed interaction with LaunchDetector.cpp).
+param set-default RWTO_TKOFF 1
+param set-default FW_LAUN_DETCN_ON 0
+
+param set-default MIS_TKO_LAND_REQ 0
+
+# Airspeed envelope -- FIRST-PASS PHYSICS ESTIMATE, not flight-validated (see header comment).
+# Modeled stall speed from the actual plant parameters (m=28286 kg [43430 lbs empty + 230 lbs pilot
+# + 2x9350 lbs fuel, see vehicle/common/setUpVehicle.m's "f22jsbsim" case], S=78.04 m^2
+# [840.0 ft^2 * 0.09290304], CLmax=1.2 [a conservative practical-usable estimate for a modern
+# fighter in conventional (non-high-AoA/TVC-assisted) flight -- f22.xml's own aero/coefficient/
+# CLalpha table peaks at 2.3 near alpha=45deg, but that geometric peak is not a realistic
+# "conventional stall" CLmax for this purpose, same reasoning c130JSBSim's own CLmax choice used]):
+#   Vstall = sqrt(2*m*g / (rho*S*CLmax)) = sqrt(2*28286*9.80665 / (1.225*78.04*1.2)) = 69.5 m/s
+param set-default FW_AIRSPD_STALL 69.5  # m/s, physics-derived clean-configuration estimate
+# RWTO_ROT_AIRSPD/FW_TKO_AIRSPD raised (2026-08-01, f22run19 post-mortem,
+# PLAN_JSBSIM_SFUNCTION_F22_C130.md section 13): SDI trace of run19 (tvc-inhibit=0, isolating TVC
+# out) showed el-pitch-cmd (aircraft/f22/f22.xml ~line 921, an FCS_FUNCTION scheduled by
+# (velocities/vc-kts, aero/alpha-deg), NOT by any rate-error/integrator loop) and elevator-pos-norm
+# BOTH pinned at their +5.0/+1.0 saturation limits from t~=25.4s onward while PX4's own commanded
+# pitch-rate-cmd stayed under 6 deg/s the entire time -- actual q still ran away to 46 deg/s and
+# pitch to 31deg (>2x FW_P_LIM_MAX=15deg) regardless. This is a genuine open-loop pitch divergence
+# once alpha climbs past ~19-20deg (el-pitch-cmd's own table breakpoints run 19/25/35deg alpha) --
+# not a PX4 command, TVC, or gear-down-authority problem (all three already ruled out across
+# run17-19). Raising rotation speed increases dynamic pressure so the SAME lift needs less alpha,
+# keeping the aircraft further from this table's apparent saturation region during rotation --
+# a physically-grounded mitigation, not a blind gain bump. Not yet flight-validated; revisit
+# aero/coefficient/CLalpha and CmDh (elevator effectiveness) directly if this alone doesn't clear
+# the divergence.
+# RWTO_ROT_AIRSPD/FW_TKO_AIRSPD reverted to their original values (2026-08-01, run20 post-mortem):
+# raising them made the divergence WORSE, not better -- el-pitch-cmd hit its -5.0 saturation limit
+# almost immediately (alpha~0.5deg) and stayed there ~1.5s before swinging all the way to +5.0,
+# yet q never stopped accelerating in EITHER elevator extreme. Higher rotation speed increases
+# dynamic pressure, which scales aerodynamic MOMENTS (both destabilizing and corrective) up, not
+# just lift -- it did not buy the alpha margin this was meant to buy. See run20 SDI trace
+# (HILDiagnostics/logs/sdi_run20.mat) and PLAN_JSBSIM_SFUNCTION_F22_C130.md section 13.
+param set-default FW_TKO_AIRSPD 95      # m/s, climbout target: > rotation speed, > stall margin
+param set-default RWTO_ROT_AIRSPD 90    # m/s, rotation trigger: ~0.95*FW_TKO_AIRSPD, > FW_AIRSPD_MIN
+param set-default RWTO_MAX_THR 1.0
+param set-default RWTO_RAMP_TIME 3.0    # afterburning turbofans spool faster than a transport's turboprops
+
+# FW_AIRSPD_MAX deliberately capped well below this aircraft's real transonic/supersonic envelope --
+# PX4's fw_att_control/fw_pos_control were never designed for a Mach-capable airframe (see header
+# comment). 130 m/s = Mach ~0.38 at sea level, a conservative subsonic-only first target; do NOT
+# raise this without first confirming PX4's fixed-wing controller behaves sanely at the resulting
+# dynamic pressure/control-surface-effectiveness regime.
+param set-default FW_AIRSPD_MAX  130    # m/s (~253 kt), conservative subsonic-only first-pass cap
+param set-default FW_AIRSPD_MIN  83     # m/s, ~1.2x stall margin, same convention as c130jsbsim
+param set-default FW_AIRSPD_TRIM 100    # m/s, comfortably above FW_AIRSPD_MIN
+param set-default FW_PSP_OFF 	 0    # deg
+param set-default FW_THR_TRIM 	 0.55    # afterburning twin-turbofan, high static thrust/weight vs c130jsbsim
+param set-default FW_THR_ASPD_MAX 1   # nd
+param set-default FW_THR_ASPD_MIN 0.2 # nd
+# FW_MAN_P_MAX/FW_T_SINK_R_SP/FW_T_CLMB_R_SP deliberately softened below the "fighter-class,
+# should be aggressive" first guess (2026-08-01, PLAN_JSBSIM_SFUNCTION_F22_C130.md section 12):
+# f22.xml's own "Pitch" channel has a "fcs/gear-down-q-limit" switch that caps commanded pitch-rate
+# authority to 30% of normal while gear/gear-pos-norm > 0, and this SIL keeps gear permanently down
+# for every JSBSim-hybrid vehicle (see packF22JSBSimInputs.m's own header comment for the full
+# story of why dynamic gear retraction was tried and reverted). Flying with only 30% authority for
+# the entire mission means PX4 must never DEMAND more pitch rate/climb performance than that 30%
+# ceiling can actually deliver -- otherwise f22.xml's own internal pitch-rate integrator winds up
+# against the persistent cap and, if the cap is ever removed (which section 12 shows shouldn't
+# happen anyway) or even just under sustained saturation, produces a violent uncommanded pitch
+# excursion. These values are a first-pass estimate assuming genuinely reduced authority, not
+# fighter-class performance -- expect to retune upward only if a live test confirms comfortable
+# margin below saturation.
+param set-default FW_MAN_P_MAX 15     # deg, reduced from an initial 25 -- conservative given the
+                                       # persistent 30%-authority ceiling
+param set-default FW_T_SINK_R_SP 1.0  # m/s, reduced from an initial 2.0
+param set-default FW_T_CLMB_R_SP 1.0  # m/s, reduced from an initial 3.0 -- gentler climb demand
+                                       # matching the persistent 30%-authority ceiling, not this
+                                       # airframe's real thrust/weight-driven climb capability
+
+# Roll Gains -- fighter-class, faster response expected than c130jsbsim's transport-class values,
+# but this SIL's PX4 fixed-wing controller has no prior fighter-class tuning history to draw from
+# (see PLAN_JSBSIM_SFUNCTION_F22_C130.md section 1.3) -- first-pass estimate only.
+param set-default FW_R_TC 0.3
+param set-default FW_RR_P 0.08
+param set-default FW_RR_I  0
+param set-default FW_RR_FF 0.4
+param set-default FW_R_RMAX 60
+param set-default FW_R_LIM 45
+
+# Pitch Gains -- FW_P_RMAX_POS reduced from an initial 30 deg/s: with only 30% of full pitch-rate
+# authority available (gear permanently down, see the FW_MAN_P_MAX comment above for the full
+# reasoning), a 30 deg/s max-rate DEMAND would ask for roughly 3x more rate than is actually
+# achievable, driving f22.xml's own internal pitch-rate integrator into sustained saturation on
+# every climb. ~9 deg/s (30% of the original 30 deg/s guess) keeps PX4's own demand within the
+# ceiling this airframe can actually deliver for its entire flight.
+param set-default FW_P_RMAX_POS 9
+param set-default FW_P_LIM_MAX 15
+param set-default FW_P_LIM_MIN -15
+
+# Yaw gains
+param set-default FW_YR_P 0.05
+
+# Airspeed params
+param set-default ASPD_FS_T_STOP 10
+param set-default ASPD_FALLBACK_GW  1
+param set-default ASPD_FS_INNOV  9.98
+
+# GYRO STUFF
+param set-default EKF2_GYR_B_NOISE 0.001
+
+# EKF -- EKF2_GPS_CTRL=7 (full GPS pos+alt+vel fusion, PX4 default) from the start, NOT the buggy
+# =3 (velocity fusion disabled) an early version of 10044_optimAeroC172pJSBSim shipped with before
+# being corrected -- see PLAN_JSBSIM_SFUNCTION_HYBRID_C172P.md section 4.4's finding. Do not copy
+# the old =3 value from a stale reference of that airframe file.
+param set-default EKF2_GPS_CHECK 21
+param set-default EKF2_GPS_CTRL 7
+param set-default EKF2_MAG_ACCLIM 0.00
+param set-default EKF2_MAG_E_NOISE 0.00
+param set-default EKF2_MAG_NOISE 0.001
+param set-default EKF2_MAG_CHECK 0
+param set-default EKF2_IMU_CTRL 1
+
+# Battery thresholds -- same overrides c172pJSBSim's/c130JSBSim's own airframes need to avoid
+# spurious low-battery failsafe action during SITL bench testing (see
+# PLAN_INCORPORACION_AERONAVES_JSBSIM_SITL.md section 4.4 finding 7).
+param set-default COM_LOW_BAT_ACT 0
