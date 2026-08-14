@@ -96,6 +96,18 @@ param set-default FW_LAUN_DETCN_ON 0
 
 param set-default MIS_TKO_LAND_REQ 0
 
+# Complete RTL instead of orbiting indefinitely at RTL_DESCEND_ALT. PX4's
+# stock -1 disables automatic landing; this SIL mission explicitly requests
+# RTL followed by landing and the JSBSim plant now re-extends gear on contact.
+param set-default RTL_LAND_DELAY 0
+
+# The JSBSim SIL runway is flat and its landing mission supplies an explicit
+# touchdown altitude, but it does not provide a persistent terrain estimate.
+# FW_LND_USETER=1 with FW_LND_ABORT=3 caused an automatic go-around immediately
+# after the LOITER_TO_ALT handoff ("Holding ... above landing waypoint"). Use
+# the mission/AMSL landing slope instead of terrain following for this plant.
+param set-default FW_LND_USETER 0
+
 # Airspeed envelope -- FIRST-PASS PHYSICS ESTIMATE, not flight-validated (see header comment).
 # Modeled stall speed from the actual plant parameters (m=28286 kg [43430 lbs empty + 230 lbs pilot
 # + 2x9350 lbs fuel, see vehicle/common/setUpVehicle.m's "f22jsbsim" case], S=78.04 m^2
@@ -105,29 +117,8 @@ param set-default MIS_TKO_LAND_REQ 0
 # "conventional stall" CLmax for this purpose, same reasoning c130JSBSim's own CLmax choice used]):
 #   Vstall = sqrt(2*m*g / (rho*S*CLmax)) = sqrt(2*28286*9.80665 / (1.225*78.04*1.2)) = 69.5 m/s
 param set-default FW_AIRSPD_STALL 69.5  # m/s, physics-derived clean-configuration estimate
-# RWTO_ROT_AIRSPD/FW_TKO_AIRSPD raised (2026-08-01, f22run19 post-mortem,
-# PLAN_JSBSIM_SFUNCTION_F22_C130.md section 13): SDI trace of run19 (tvc-inhibit=0, isolating TVC
-# out) showed el-pitch-cmd (aircraft/f22/f22.xml ~line 921, an FCS_FUNCTION scheduled by
-# (velocities/vc-kts, aero/alpha-deg), NOT by any rate-error/integrator loop) and elevator-pos-norm
-# BOTH pinned at their +5.0/+1.0 saturation limits from t~=25.4s onward while PX4's own commanded
-# pitch-rate-cmd stayed under 6 deg/s the entire time -- actual q still ran away to 46 deg/s and
-# pitch to 31deg (>2x FW_P_LIM_MAX=15deg) regardless. This is a genuine open-loop pitch divergence
-# once alpha climbs past ~19-20deg (el-pitch-cmd's own table breakpoints run 19/25/35deg alpha) --
-# not a PX4 command, TVC, or gear-down-authority problem (all three already ruled out across
-# run17-19). Raising rotation speed increases dynamic pressure so the SAME lift needs less alpha,
-# keeping the aircraft further from this table's apparent saturation region during rotation --
-# a physically-grounded mitigation, not a blind gain bump. Not yet flight-validated; revisit
-# aero/coefficient/CLalpha and CmDh (elevator effectiveness) directly if this alone doesn't clear
-# the divergence.
-# RWTO_ROT_AIRSPD/FW_TKO_AIRSPD reverted to their original values (2026-08-01, run20 post-mortem):
-# raising them made the divergence WORSE, not better -- el-pitch-cmd hit its -5.0 saturation limit
-# almost immediately (alpha~0.5deg) and stayed there ~1.5s before swinging all the way to +5.0,
-# yet q never stopped accelerating in EITHER elevator extreme. Higher rotation speed increases
-# dynamic pressure, which scales aerodynamic MOMENTS (both destabilizing and corrective) up, not
-# just lift -- it did not buy the alpha margin this was meant to buy. See run20 SDI trace
-# (HILDiagnostics/logs/sdi_run20.mat) and PLAN_JSBSIM_SFUNCTION_F22_C130.md section 13.
-param set-default FW_TKO_AIRSPD 95      # m/s, climbout target: > rotation speed, > stall margin
-param set-default RWTO_ROT_AIRSPD 90    # m/s, rotation trigger: ~0.95*FW_TKO_AIRSPD, > FW_AIRSPD_MIN
+param set-default FW_TKO_AIRSPD 95      # m/s, reverted 2026-08-01 (run20: raising it made things worse)
+param set-default RWTO_ROT_AIRSPD 90    # m/s, reverted 2026-08-01 (run20: raising it made things worse)
 param set-default RWTO_MAX_THR 1.0
 param set-default RWTO_RAMP_TIME 3.0    # afterburning turbofans spool faster than a transport's turboprops
 
@@ -163,15 +154,18 @@ param set-default FW_T_CLMB_R_SP 1.0  # m/s, reduced from an initial 3.0 -- gent
                                        # matching the persistent 30%-authority ceiling, not this
                                        # airframe's real thrust/weight-driven climb capability
 
-# Roll Gains -- fighter-class, faster response expected than c130jsbsim's transport-class values,
-# but this SIL's PX4 fixed-wing controller has no prior fighter-class tuning history to draw from
-# (see PLAN_JSBSIM_SFUNCTION_F22_C130.md section 1.3) -- first-pass estimate only.
-param set-default FW_R_TC 0.3
-param set-default FW_RR_P 0.08
+# Roll gains deliberately softened after the INS2 waypoint campaign. With the
+# original 45 deg / 60 deg/s envelope, repeated waypoint captures occasionally
+# reached 86 deg roll, stalled below FW_AIRSPD_MIN, and tripped PX4's attitude
+# failure. At 100 m/s a 30 deg coordinated turn is still about 1766 m radius,
+# inside the mission's 1900 m acceptance gate, so the aggressive envelope buys
+# no navigation capability here and only reduces stability margin.
+param set-default FW_R_TC 0.6
+param set-default FW_RR_P 0.04
 param set-default FW_RR_I  0
-param set-default FW_RR_FF 0.4
-param set-default FW_R_RMAX 60
-param set-default FW_R_LIM 45
+param set-default FW_RR_FF 0.2
+param set-default FW_R_RMAX 30
+param set-default FW_R_LIM 30
 
 # Pitch Gains -- FW_P_RMAX_POS reduced from an initial 30 deg/s: with only 30% of full pitch-rate
 # authority available (gear permanently down, see the FW_MAN_P_MAX comment above for the full

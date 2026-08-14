@@ -184,6 +184,67 @@ void SimulatorMavlink::send_controls()
 	}
 }
 
+void SimulatorMavlink::send_odometry()
+{
+	// PLAN_USV_SURFACE_PX4_ESTIMATOR_ONLY.md requirement 4. vehicle_odometry_s follows ROS
+	// REP 147: position/q/velocity/angular_velocity are NaN when invalid/unknown (see
+	// msg/VehicleOdometry.msg) -- forwarded as-is so the receiving side's own NaN checks on
+	// x/q[0]/vx (not the covariance array) are the validity signal, matching this topic's own
+	// convention rather than inventing a second one.
+	vehicle_odometry_s odom;
+
+	if (_vehicle_odometry_sub.update(&odom)) {
+		mavlink_odometry_t mavlink_odom{};
+
+		mavlink_odom.time_usec = odom.timestamp;
+		mavlink_odom.frame_id = MAV_FRAME_LOCAL_NED;
+		mavlink_odom.child_frame_id = MAV_FRAME_BODY_FRD;
+		mavlink_odom.estimator_type = MAV_ESTIMATOR_TYPE_AUTOPILOT;
+		mavlink_odom.reset_counter = odom.reset_counter;
+		mavlink_odom.quality = odom.quality;
+
+		mavlink_odom.x = odom.position[0];
+		mavlink_odom.y = odom.position[1];
+		mavlink_odom.z = odom.position[2];
+
+		mavlink_odom.q[0] = odom.q[0];
+		mavlink_odom.q[1] = odom.q[1];
+		mavlink_odom.q[2] = odom.q[2];
+		mavlink_odom.q[3] = odom.q[3];
+
+		mavlink_odom.vx = odom.velocity[0];
+		mavlink_odom.vy = odom.velocity[1];
+		mavlink_odom.vz = odom.velocity[2];
+
+		mavlink_odom.rollspeed = odom.angular_velocity[0];
+		mavlink_odom.pitchspeed = odom.angular_velocity[1];
+		mavlink_odom.yawspeed = odom.angular_velocity[2];
+
+		// Only the diagonal position/orientation variance terms are known from
+		// vehicle_odometry_s (it carries per-axis variances, not a full 6x6 matrix) -- everything
+		// else is NaN per MAVLink's own "unknown -> NaN" convention for these fields.
+		for (int i = 0; i < 21; i++) {
+			mavlink_odom.pose_covariance[i] = NAN;
+			mavlink_odom.velocity_covariance[i] = NAN;
+		}
+
+		mavlink_odom.pose_covariance[0] = odom.position_variance[0];
+		mavlink_odom.pose_covariance[6] = odom.position_variance[1];
+		mavlink_odom.pose_covariance[11] = odom.position_variance[2];
+		mavlink_odom.pose_covariance[15] = odom.orientation_variance[0];
+		mavlink_odom.pose_covariance[18] = odom.orientation_variance[1];
+		mavlink_odom.pose_covariance[20] = odom.orientation_variance[2];
+
+		mavlink_odom.velocity_covariance[0] = odom.velocity_variance[0];
+		mavlink_odom.velocity_covariance[6] = odom.velocity_variance[1];
+		mavlink_odom.velocity_covariance[11] = odom.velocity_variance[2];
+
+		mavlink_message_t message{};
+		mavlink_msg_odometry_encode(_param_mav_sys_id.get(), _param_mav_comp_id.get(), &message, &mavlink_odom);
+		send_mavlink_message(message);
+	}
+}
+
 void SimulatorMavlink::update_sensors(const hrt_abstime &time, const mavlink_hil_sensor_t &sensors)
 {
 	// temperature only updated with baro
@@ -998,14 +1059,21 @@ void SimulatorMavlink::send()
 	// Without this, we get stuck at px4_poll which waits for a time update.
 	send_heartbeat();
 
-	px4_pollfd_struct_t fds_actuator_outputs[1] = {};
-	fds_actuator_outputs[0].fd = _actuator_outputs_sub;
-	fds_actuator_outputs[0].events = POLLIN;
+	// Estimator-only vehicles intentionally do not publish actuator_outputs_sim.
+	// Poll vehicle_odometry as an independent wake source so EKF2 output is still
+	// returned to the simulator and the TCP sensor stream cannot deadlock behind
+	// a control topic that will never update.
+	const int vehicle_odometry_poll_sub = orb_subscribe(ORB_ID(vehicle_odometry));
+	px4_pollfd_struct_t fds[2] = {};
+	fds[0].fd = _actuator_outputs_sub;
+	fds[0].events = POLLIN;
+	fds[1].fd = vehicle_odometry_poll_sub;
+	fds[1].events = POLLIN;
 
 	while (true) {
 
 		// Wait for up to 100ms for data.
-		int pret = px4_poll(&fds_actuator_outputs[0], 1, 100);
+		int pret = px4_poll(fds, 2, 100);
 
 		if (pret == 0) {
 			// Timed out, try again.
@@ -1017,7 +1085,7 @@ void SimulatorMavlink::send()
 			continue;
 		}
 
-		if (fds_actuator_outputs[0].revents & POLLIN) {
+		if (fds[0].revents & POLLIN) {
 			// Got new data to read, update all topics.
 			parameters_update(false);
 			check_failure_injections();
@@ -1029,8 +1097,15 @@ void SimulatorMavlink::send()
 
 			send_controls();
 		}
+
+		if (fds[1].revents & POLLIN) {
+			// send_odometry() consumes the update through the existing typed
+			// subscription and emits MAVLink ODOMETRY with EKF validity fields.
+			send_odometry();
+		}
 	}
 
+	orb_unsubscribe(vehicle_odometry_poll_sub);
 	orb_unsubscribe(_actuator_outputs_sub);
 }
 

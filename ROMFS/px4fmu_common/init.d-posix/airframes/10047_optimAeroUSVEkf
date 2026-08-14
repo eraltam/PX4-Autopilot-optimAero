@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# @name optimAero USV Surface (EKF2 estimator only)
+# @type Boat
+# @class Rover
+# @autostart 10047
+#
+# Estimator-only counterpart to 10029_optimAeroUSV -- see
+# PLAN_USV_SURFACE_PX4_ESTIMATOR_ONLY.md (repo root, one level up from optimAeroPX4SIL).
+# MSS's own guidance/control law (mssOtterGuidanceControl.slx) is the only controller for this
+# vehicle's plant; PX4 only runs ekf2 against simulated ANELLO X3/GPS/mag/baro measurements.
+#
+# Deliberately does NOT source rc.rover_defaults or rc.boat_defaults -- both set
+# VEHICLE_TYPE=rover (confirmed by reading both files directly), which would pull in
+# rc.rover_apps (rover_pos_control/rover_att_control/control_allocator) via rc.vehicle_setup's
+# `if [ $VEHICLE_TYPE = rover ]` branch. Also deliberately does NOT set
+# PWM_MAIN_FUNC1/PWM_MAIN_FUNC2/CA_AIRFRAME. With VEHICLE_TYPE left at rcS's own default
+# ("none", set at the top of rcS), rc.vehicle_setup's `if [ $VEHICLE_TYPE = none ]` fallback
+# branch runs instead (`echo "No autostart ID found"; ekf2 start &` -- no mixer/control module
+# started). mavlink, sensors, and ekf2's own module registration all happen the normal,
+# unconditional way earlier in rcS regardless of VEHICLE_TYPE -- confirmed by reading rcS itself,
+# not assumed.
+#
+
+param set-default MAV_TYPE 11
+
+# Use the vessel's GNSS datum as the sole height source. Barometric aiding is
+# unnecessary for a surface craft and was the remaining source of vertical
+# innovation disagreement during estimator-only startup.
+param set-default EKF2_HGT_REF 1
+param set-default EKF2_BARO_CTRL 0
+
+# HIL_GPS reports epv=1.5 m for this sensor model. Match EKF2's vertical
+# position-noise floor to that declared accuracy; the generic 0.5 m default
+# overweights the deliberately noisy GNSS altitude and intermittently trips
+# the preflight height innovation check on an otherwise healthy estimate.
+param set-default EKF2_GPS_P_NOISE 1.5

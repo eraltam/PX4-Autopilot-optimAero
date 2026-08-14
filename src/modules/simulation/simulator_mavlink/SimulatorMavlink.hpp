@@ -237,6 +237,7 @@ private:
 	void request_hil_state_quaternion();
 	void send();
 	void send_controls();
+	void send_odometry();
 	void send_heartbeat();
 	void send_esc_telemetry(mavlink_hil_actuator_controls_t hil_act_control);
 	void send_mavlink_message(const mavlink_message_t &aMsg);
@@ -269,6 +270,11 @@ private:
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
 	uORB::Subscription _vehicle_command_sub{ORB_ID(vehicle_command)};
 	uORB::Subscription _battery_status_sub{ORB_ID(battery_status)};
+	// PLAN_USV_SURFACE_PX4_ESTIMATOR_ONLY.md requirement 4 -- send EKF2's own vehicle_odometry
+	// back over this same lockstep sim link (see send_odometry()) so an estimator-only vehicle's
+	// Simulink plant can close its control loop on PX4's estimate deterministically, in step,
+	// rather than polling a separate (non-lockstep) telemetry mavlink instance.
+	uORB::Subscription _vehicle_odometry_sub{ORB_ID(vehicle_odometry)};
 
 	// hil map_ref data
 	MapProjection _global_local_proj_ref{};

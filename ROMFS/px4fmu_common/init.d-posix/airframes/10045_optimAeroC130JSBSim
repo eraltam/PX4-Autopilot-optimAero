@@ -123,11 +123,15 @@ param set-default FW_T_CLMB_R_SP 1.5  # m/s, lower climb rate expected given mas
 
 # Roll Gains -- lower rates than c172pJSBSim's GA-class values, large transport with correspondingly
 # larger roll inertia (Ixx=4.97e6 kg*m^2 vs c172pJSBSim's ~1284 kg*m^2, several orders of magnitude).
-param set-default FW_R_TC 0.5
-param set-default FW_RR_P 0.03
-param set-default FW_RR_I  0
-param set-default FW_RR_FF 0.3
-param set-default FW_R_RMAX 30
+param set-default FW_R_TC 0.4
+# Flight session c130_corridor_full_pt_ins2_20260803_2144 showed the aircraft
+# reaching WP1, then diverging by >2 km while the roll setpoint saturated at
+# +/-30 deg and the aileron command remained only ~0.18. Increase rate-loop
+# authority and add a small integrator to remove the sustained lateral bias.
+param set-default FW_RR_P 0.08
+param set-default FW_RR_I 0.02
+param set-default FW_RR_FF 0.5
+param set-default FW_R_RMAX 45
 param set-default FW_R_LIM 30
 
 # Pitch Gains
@@ -136,7 +140,7 @@ param set-default FW_P_LIM_MAX 20
 param set-default FW_P_LIM_MIN -20
 
 # Yaw gains
-param set-default FW_YR_P 0.05
+param set-default FW_YR_P 0.10
 
 # Airspeed params
 param set-default ASPD_FS_T_STOP 10
@@ -158,21 +162,6 @@ param set-default EKF2_MAG_E_NOISE 0.00
 param set-default EKF2_MAG_NOISE 0.001
 param set-default EKF2_MAG_CHECK 0
 param set-default EKF2_IMU_CTRL 1
-
-# EKF2_VEL_GATE/EKF2_POS_GATE widening TRIED and REVERTED (2026-08-01, c130run8): raising both to
-# 15 to stop the repeated "position/velocity invalid" failsafe cycling (section 13.7's root-cause
-# finding: clean raw GPS, EKF2 innovation rejection, vel/pos_test_ratio up to 9.9 against a stock
-# gate of ~3-5) made the outcome WORSE, not better -- c130run8 saw 26 failsafe cycles (vs 7 in
-# run7), never advanced past waypoint 3 (run7 reached RTL), and ended in a severe, unrecoverable
-# divergence (groundspeed 133 m/s vs airspeed 42 m/s, altitude -65m, 21km off-course). Widening
-# the gate lets the EKF ACCEPT innovations it would otherwise have correctly rejected -- the
-# repeated rejection cycling in run7 was very plausibly the EKF *protecting* the estimate from
-# genuinely bad fused data, not an overly-strict false positive; removing that protection let bad
-# fusion propagate into the actual state estimate instead of just flagging it. **Do not re-widen
-# these gates without new evidence pointing the other way** -- the real fix is almost certainly
-# upstream of the gate (why is the innovation large in the first place -- process noise tuning,
-# acceleration estimation, or a genuine plant-side dynamics issue during hard turns), not
-# loosening the check that was correctly catching it. See section 13.8.
 
 # Battery thresholds -- same overrides c172pJSBSim's own airframe needed to avoid spurious low-battery
 # failsafe action during SITL bench testing (see PLAN_INCORPORACION_AERONAVES_JSBSIM_SITL.md
